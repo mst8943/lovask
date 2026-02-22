@@ -1,0 +1,12 @@
+[
+  "                    <Button type=\"button\" variant=\"secondary\" onClick={() => setPollOpen(false)}>Kapat</Button>\r",
+  "                </div>\r",
+  "            </div>\r",
+  "        </div>\r",
+  "    )\r",
+  "}\r",
+  "        </div >\r",
+  "    )\r",
+  "}\r",
+  ""
+]

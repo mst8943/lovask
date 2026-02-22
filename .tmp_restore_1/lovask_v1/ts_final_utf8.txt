@@ -1,0 +1,122 @@
+﻿app/(main)/matches/[id]/page.tsx(700,39): error TS2345: Argument of type '{ id: string; display_name: string | null; age: number | null; gender: string | null; bio: string | null; city: string | null; photos: Json; interests: string[] | null; looking_for_genders?: string[] | ... 1 more ... | undefined; ... 29 more ...; updated_at: string; } | null' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; } | null | undefined'.
+  Type '{ id: string; display_name: string | null; age: number | null; gender: string | null; bio: string | null; city: string | null; photos: Json; interests: string[] | null; looking_for_genders?: string[] | ... 1 more ... | undefined; ... 29 more ...; updated_at: string; }' is not assignable to type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+    Types of property 'photos' are incompatible.
+      Type 'Json' is not assignable to type 'PhotoInput'.
+        Type 'number' is not assignable to type 'PhotoInput'.
+app/(main)/matches/page.tsx(95,59): error TS2345: Argument of type '{ id: string; display_name: string | null; age: number | null; gender: string | null; bio: string | null; city: string | null; photos: Json; interests: string[] | null; looking_for_genders?: string[] | ... 1 more ... | undefined; ... 29 more ...; updated_at: string; }' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+  Types of property 'photos' are incompatible.
+    Type 'Json' is not assignable to type 'PhotoInput'.
+      Type 'number' is not assignable to type 'PhotoInput'.
+app/(main)/notifications/page.tsx(198,88): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+app/(main)/notifications/page.tsx(203,110): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+app/(main)/profile/page.tsx(176,53): error TS2345: Argument of type '{ photos: unknown; display_name: string | null; gender?: string | null | undefined; is_bot?: boolean | null | undefined; }' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+  Types of property 'photos' are incompatible.
+    Type 'unknown' is not assignable to type 'PhotoInput'.
+app/(main)/settings/notifications/page.tsx(126,33): error TS2322: Type 'string | boolean' is not assignable to type 'boolean | undefined'.
+  Type 'string' is not assignable to type 'boolean | undefined'.
+app/(main)/settings/verification/page.tsx(109,78): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/(main)/store/premium/page.tsx(72,17): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+app/(main)/stories/page.tsx(82,61): error TS2345: Argument of type '{ display_name: string | null; photos: unknown; gender?: string | null | undefined; is_bot?: boolean | null | undefined; } | null | undefined' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; } | null | undefined'.
+  Type '{ display_name: string | null; photos: unknown; gender?: string | null | undefined; is_bot?: boolean | null | undefined; }' is not assignable to type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+    Types of property 'photos' are incompatible.
+      Type 'unknown' is not assignable to type 'PhotoInput'.
+app/(main)/stories/page.tsx(124,57): error TS2345: Argument of type '{ display_name: string | null; photos: unknown; gender?: string | null | undefined; is_bot?: boolean | null | undefined; } | null | undefined' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; } | null | undefined'.
+  Type '{ display_name: string | null; photos: unknown; gender?: string | null | undefined; is_bot?: boolean | null | undefined; }' is not assignable to type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+    Types of property 'photos' are incompatible.
+      Type 'unknown' is not assignable to type 'PhotoInput'.
+app/admin/bots/page.tsx(159,21): error TS2345: Argument of type '{ id: any; email: any; role: any; coin_balance: any; is_premium: any; created_at: any; profiles: { display_name: any; age: any; gender: any; city: any; photos: any; }[]; bot_configs: { personality_prompt: any; ... 10 more ...; use_global: any; }[]; }[]' is not assignable to parameter of type 'SetStateAction<BotRow[]>'.
+  Type '{ id: any; email: any; role: any; coin_balance: any; is_premium: any; created_at: any; profiles: { display_name: any; age: any; gender: any; city: any; photos: any; }[]; bot_configs: { personality_prompt: any; ... 10 more ...; use_global: any; }[]; }[]' is not assignable to type 'BotRow[]'.
+    Type '{ id: any; email: any; role: any; coin_balance: any; is_premium: any; created_at: any; profiles: { display_name: any; age: any; gender: any; city: any; photos: any; }[]; bot_configs: { personality_prompt: any; ... 10 more ...; use_global: any; }[]; }' is missing the following properties from type 'BotRow': display_name, age, gender, city, and 17 more.
+app/admin/bots/page.tsx(991,9): error TS18049: 'bot.bot_configs' is possibly 'null' or 'undefined'.
+app/admin/bots/page.tsx(991,9): error TS18049: 'bot.bot_configs.behavior_settings' is possibly 'null' or 'undefined'.
+app/admin/bots/page.tsx(996,9): error TS18049: 'bot.bot_configs' is possibly 'null' or 'undefined'.
+app/admin/bots/page.tsx(1313,45): error TS18048: 'edit.photos' is possibly 'undefined'.
+app/admin/bots/page.tsx(1321,91): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/admin/notifications/page.tsx(123,80): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+app/admin/notifications/page.tsx(126,41): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+app/admin/ops/page.tsx(100,34): error TS2339: Property 'slaHours' does not exist on type 'never'.
+app/admin/ops/page.tsx(672,49): error TS2322: Type 'boolean | "" | null' is not assignable to type 'boolean | undefined'.
+  Type 'null' is not assignable to type 'boolean | undefined'.
+app/admin/profile-variants/page.tsx(47,25): error TS2352: Conversion of type '{ id: any; user_id: any; name: any; bio: any; photos: any; is_active: any; created_at: any; profiles: { display_name: any; }[]; }[]' to type 'VariantRow[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: any; user_id: any; name: any; bio: any; photos: any; is_active: any; created_at: any; profiles: { display_name: any; }[]; }' is not comparable to type 'VariantRow'.
+    Types of property 'profiles' are incompatible.
+      Property 'display_name' is missing in type '{ display_name: any; }[]' but required in type '{ display_name: string | null; }'.
+app/admin/reports/page.tsx(60,24): error TS2345: Argument of type '{ reporter_id: string | null; reported_id: string | null; }[]' is not assignable to parameter of type 'SetStateAction<ReportRow[]>'.
+  Type '{ reporter_id: string | null; reported_id: string | null; }[]' is not assignable to type 'ReportRow[]'.
+    Type '{ reporter_id: string | null; reported_id: string | null; }' is missing the following properties from type 'ReportRow': id, status, created_at
+app/admin/verifications/page.tsx(382,79): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+app/api/admin/bots/auto-create/route.ts(91,44): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/api/admin/bots/auto-create/route.ts(94,44): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/api/admin/bots/auto-create/route.ts(98,61): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/api/admin/bots/auto-create/route.ts(99,59): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/api/admin/bots/pool/photos/route.ts(2,20): error TS7016: Could not find a declaration file for module 'adm-zip'. 'C:/MAMP/htdocs/lovask/lovask-web/node_modules/adm-zip/adm-zip.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/adm-zip` if it exists or add a new declaration (.d.ts) file containing `declare module 'adm-zip';`
+app/api/bots/respond/route.ts(164,122): error TS2339: Property 'read_receipt_delay_s' does not exist on type '{ personality_prompt: any; behavior_settings: any; tone: any; language_mode: any; engagement_intensity: any; use_global: any; }'.
+app/api/bots/respond/route.ts(170,38): error TS2339: Property 'cooldown_seconds' does not exist on type 'BotSettings'.
+app/api/bots/respond/route.ts(471,44): error TS2304: Cannot find name 'admin'.
+app/api/bots/respond/route.ts(474,28): error TS2304: Cannot find name 'auth'.
+app/api/bots/respond/route.ts(477,13): error TS1108: A 'return' statement can only be used within a function body.
+app/api/bots/respond/route.ts(480,41): error TS2304: Cannot find name 'admin'.
+app/api/bots/respond/route.ts(483,29): error TS2304: Cannot find name 'match_id'.
+app/api/bots/respond/route.ts(484,27): error TS2304: Cannot find name 'bot_id'.
+app/api/bots/respond/route.ts(487,13): error TS1108: A 'return' statement can only be used within a function body.
+app/api/push/send/route.ts(1,21): error TS7016: Could not find a declaration file for module 'web-push'. 'C:/MAMP/htdocs/lovask/lovask-web/node_modules/web-push/src/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/web-push` if it exists or add a new declaration (.d.ts) file containing `declare module 'web-push';`
+components/feed/ProfileCard.tsx(16,39): error TS2345: Argument of type '{ id: string; display_name: string | null; age: number | null; gender: string | null; bio: string | null; city: string | null; photos: Json; interests: string[] | null; looking_for_genders?: string[] | ... 1 more ... | undefined; ... 29 more ...; updated_at: string; }' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+  Types of property 'photos' are incompatible.
+    Type 'Json' is not assignable to type 'PhotoInput'.
+      Type 'number' is not assignable to type 'PhotoInput'.
+components/feed/ProfileListItem.tsx(32,39): error TS2345: Argument of type 'ProfileWithMeta' is not assignable to parameter of type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; } | null | undefined'.
+  Type 'ProfileWithMeta' is not assignable to type '{ photos?: PhotoInput; is_bot?: boolean | null | undefined; gender?: string | null | undefined; }'.
+    Types of property 'photos' are incompatible.
+      Type 'Json' is not assignable to type 'PhotoInput'.
+        Type 'number' is not assignable to type 'PhotoInput'.
+hooks/useChat.ts(21,44): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataInfiniteOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>, queryClient?: QueryClient | undefined): DefinedUseInfiniteQueryResult<...>', gave the following error.
+    Argument of type '{ queryKey: string[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>; ... 4 more ...; refetchIntervalInBackground: boolean; }' is not assignable to parameter of type 'DefinedInitialDataInfiniteOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>'.
+      Property 'initialPageParam' is missing in type '{ queryKey: string[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>; ... 4 more ...; refetchIntervalInBackground: boolean; }' but required in type 'UseInfiniteQueryOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataInfiniteOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>, queryClient?: QueryClient | undefined): UseInfiniteQueryResult<...>', gave the following error.
+    Argument of type '{ queryKey: string[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>; ... 4 more ...; refetchIntervalInBackground: boolean; }' is not assignable to parameter of type 'UndefinedInitialDataInfiniteOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>'.
+      Property 'initialPageParam' is missing in type '{ queryKey: string[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>; ... 4 more ...; refetchIntervalInBackground: boolean; }' but required in type 'UseInfiniteQueryOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>'.
+  Overload 3 of 3, '(options: UseInfiniteQueryOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>, queryClient?: QueryClient | undefined): UseInfiniteQueryResult<...>', gave the following error.
+    Argument of type '{ queryKey: string[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>; ... 4 more ...; refetchIntervalInBackground: boolean; }' is not assignable to parameter of type 'UseInfiniteQueryOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>'.
+      Property 'initialPageParam' is missing in type '{ queryKey: string[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>; ... 4 more ...; refetchIntervalInBackground: boolean; }' but required in type 'UseInfiniteQueryOptions<unknown, Error, InfiniteData<unknown, unknown>, string[], unknown>'.
+hooks/useChat.ts(23,64): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | null | undefined'.
+hooks/useChat.ts(24,41): error TS18046: 'lastPage' is of type 'unknown'.
+hooks/useChat.ts(33,56): error TS18046: 'p' is of type 'unknown'.
+hooks/useFeedList.ts(52,50): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataInfiniteOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>, queryClient?: QueryClient | undefined): DefinedUseInfiniteQueryResult<...>', gave the following error.
+    Argument of type '{ queryKey: (string | (FeedFilterState & FeedFilterActions) | undefined)[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: readonly unknown[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<...> | undefined; }) => Promise<...>; enabled: boolean; getNextPageParam: (lastPag...' is not assignable to parameter of type 'DefinedInitialDataInfiniteOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>'.
+      Property 'initialPageParam' is missing in type '{ queryKey: (string | (FeedFilterState & FeedFilterActions) | undefined)[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: readonly unknown[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<...> | undefined; }) => Promise<...>; enabled: boolean; getNextPageParam: (lastPag...' but required in type 'UseInfiniteQueryOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataInfiniteOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>, queryClient?: QueryClient | undefined): UseInfiniteQueryResult<...>', gave the following error.
+    Argument of type '{ queryKey: (string | (FeedFilterState & FeedFilterActions) | undefined)[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: readonly unknown[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<...> | undefined; }) => Promise<...>; enabled: boolean; getNextPageParam: (lastPag...' is not assignable to parameter of type 'UndefinedInitialDataInfiniteOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>'.
+      Property 'initialPageParam' is missing in type '{ queryKey: (string | (FeedFilterState & FeedFilterActions) | undefined)[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: readonly unknown[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<...> | undefined; }) => Promise<...>; enabled: boolean; getNextPageParam: (lastPag...' but required in type 'UseInfiniteQueryOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>'.
+  Overload 3 of 3, '(options: UseInfiniteQueryOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>, queryClient?: QueryClient | undefined): UseInfiniteQueryResult<...>', gave the following error.
+    Argument of type '{ queryKey: (string | (FeedFilterState & FeedFilterActions) | undefined)[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: readonly unknown[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<...> | undefined; }) => Promise<...>; enabled: boolean; getNextPageParam: (lastPag...' is not assignable to parameter of type 'UseInfiniteQueryOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>'.
+      Property 'initialPageParam' is missing in type '{ queryKey: (string | (FeedFilterState & FeedFilterActions) | undefined)[]; queryFn: ({ pageParam }: { client: QueryClient; queryKey: readonly unknown[]; signal: AbortSignal; pageParam: unknown; direction: FetchDirection; meta: Record<...> | undefined; }) => Promise<...>; enabled: boolean; getNextPageParam: (lastPag...' but required in type 'UseInfiniteQueryOptions<FeedPage, Error, InfiniteData<FeedPage, unknown>, readonly unknown[], unknown>'.
+hooks/useFeedList.ts(115,61): error TS2339: Property 'profiles' does not exist on type 'TQueryFnData'.
+hooks/useNotificationsUnread.ts(85,10): error TS2339: Property 'finally' does not exist on type 'PromiseLike<void>'.
+next.config.ts(31,5): error TS2353: Object literal may only specify known properties, and 'fallbacks' does not exist in type 'GenerateSWOptions'.
+next.config.ts(57,3): error TS2578: Unused '@ts-expect-error' directive.
+services/eventService.ts(56,12): error TS2352: Conversion of type '{ user_id: any; status: any; created_at: any; profiles: { id: any; display_name: any; age: any; city: any; photos: any; is_verified: any; is_bot: any; }[]; }[]' to type '{ user_id: string; status: "going" | "maybe" | "not_going"; created_at: string; profiles?: { id: string; display_name: string | null; age: number | null; city: string | null; photos: string[] | null; is_verified: boolean | null; is_bot: boolean | null; } | null | undefined; }[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ user_id: any; status: any; created_at: any; profiles: { id: any; display_name: any; age: any; city: any; photos: any; is_verified: any; is_bot: any; }[]; }' is not comparable to type '{ user_id: string; status: "going" | "maybe" | "not_going"; created_at: string; profiles?: { id: string; display_name: string | null; age: number | null; city: string | null; photos: string[] | null; is_verified: boolean | null; is_bot: boolean | null; } | null | undefined; }'.
+    Types of property 'profiles' are incompatible.
+      Type '{ id: any; display_name: any; age: any; city: any; photos: any; is_verified: any; is_bot: any; }[]' is missing the following properties from type '{ id: string; display_name: string | null; age: number | null; city: string | null; photos: string[] | null; is_verified: boolean | null; is_bot: boolean | null; }': id, display_name, age, city, and 3 more.
+services/feedService.ts(169,39): error TS2345: Argument of type '(row: { users?: { is_premium?: boolean; last_active_at?: string | null; }; }) => { is_premium: boolean; last_active_at: string | null; users?: { is_premium?: boolean; last_active_at?: string | null; }; }' is not assignable to parameter of type '(value: { id: any; display_name: any; age: any; gender: any; city: any; bio: any; photos: any; interests: any; is_bot: any; looking_for_genders: any; is_verified: any; updated_at: any; users: { id: any; is_premium: any; last_active_at: any; }[]; }, index: number, array: { ...; }[]) => { ...; }'.
+  Types of parameters 'row' and 'value' are incompatible.
+    Type '{ id: any; display_name: any; age: any; gender: any; city: any; bio: any; photos: any; interests: any; is_bot: any; looking_for_genders: any; is_verified: any; updated_at: any; users: { id: any; is_premium: any; last_active_at: any; }[]; }' is not assignable to type '{ users?: { is_premium?: boolean | undefined; last_active_at?: string | null | undefined; } | undefined; }'.
+      Types of property 'users' are incompatible.
+        Type '{ id: any; is_premium: any; last_active_at: any; }[]' has no properties in common with type '{ is_premium?: boolean | undefined; last_active_at?: string | null | undefined; }'.
+worker/index.ts(4,39): error TS2304: Cannot find name 'PushEvent'.
+worker/index.ts(13,26): error TS2339: Property 'registration' does not exist on type 'Window & typeof globalThis'.
+worker/index.ts(16,52): error TS2552: Cannot find name 'NotificationEvent'. Did you mean 'NotificationEventMap'?
+worker/index.ts(23,14): error TS2339: Property 'clients' does not exist on type 'Window & typeof globalThis'.
+worker/index.ts(23,84): error TS7006: Parameter 'clientList' implicitly has an 'any' type.
+worker/index.ts(30,25): error TS2339: Property 'clients' does not exist on type 'Window & typeof globalThis'.

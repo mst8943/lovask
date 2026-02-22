@@ -1,0 +1,2386 @@
+[
+  {
+    "id": "TC001",
+    "title": "Register with valid details redirects to onboarding",
+    "description": "Verifies a new user can register with valid inputs and is taken to the onboarding flow.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test User\" into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"newuser+e2e@example.com\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ValidPassw0rd!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Register button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Registration shows error for invalid email format",
+    "description": "Verifies registration blocks submission and shows an email format error when email is invalid.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Type \"bad-email-format\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"ValidPassw0rd!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Register button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"email\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"invalid\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Login with valid credentials lands on swipe page",
+    "description": "Verifies an existing user can log in successfully and reach the main swipe experience.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Login with wrong password shows authentication error",
+    "description": "Verifies the app shows a visible authentication error when password is incorrect.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"TotallyWrongPassword123!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"error\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"password\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Session persists after refresh on swipe page",
+    "description": "Verifies that after a successful login, refreshing the page keeps the user signed in on /swipe.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Press Enter to refresh the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Logout from settings then accessing swipe redirects to login",
+    "description": "Verifies logout clears access to protected routes and protected route enforcement redirects to /login.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the Settings link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Click the Logout button"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /swipe"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Login blocks submission when email is missing",
+    "description": "Verifies login requires an email and shows a visible validation message when email is blank.",
+    "category": "User Authentication",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"email\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Login blocks submission when password is missing",
+    "description": "Verifies login requires a password and shows a visible validation message when password is blank.",
+    "category": "User Authentication",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Click the Login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"password\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Complete onboarding successfully and reach Swipe",
+    "description": "Verifies a logged-in user can complete all required onboarding steps and is taken to the Swipe screen.",
+    "category": "Onboarding",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Display Name\" into the display name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"1995-01-15\" into the birthdate field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Complete\" or \"Finish\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Onboarding blocks progress when display name is empty",
+    "description": "Verifies validation prevents continuing when the required display name is missing.",
+    "category": "Onboarding",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Next\" or \"Continue\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Display name\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Onboarding blocks progress when birthdate is empty",
+    "description": "Verifies validation prevents continuing when the required birthdate is missing.",
+    "category": "Onboarding",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Display Name\" into the display name field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Next\" or \"Continue\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Birthdate\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Onboarding blocks finishing when photo is missing (if photo is required)",
+    "description": "Verifies the user cannot finish onboarding without a required profile photo.",
+    "category": "Onboarding",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Display Name\" into the display name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"1995-01-15\" into the birthdate field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Complete\" or \"Finish\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Photo\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Entering an obviously invalid birthdate shows validation error",
+    "description": "Verifies the birthdate field validates format/range and prevents progress with an invalid value.",
+    "category": "Onboarding",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Display Name\" into the display name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"2099-01-01\" into the birthdate field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Next\" or \"Continue\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Birthdate\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"invalid\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Onboarding retains entered values after a validation error",
+    "description": "Verifies user inputs are preserved when a validation error occurs, reducing re-entry friction.",
+    "category": "Onboarding",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/onboarding\""
+      },
+      {
+        "type": "action",
+        "description": "Type \"Persistent Name\" into the display name field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Next\" or \"Continue\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"required\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Persistent Name\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Like a profile card advances to the next card",
+    "description": "Verifies that liking the current profile card moves the feed to the next available profile card.",
+    "category": "Swiping (Feed)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"profile card\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Like\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"profile card\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Pass a profile card advances to the next card",
+    "description": "Verifies that passing the current profile card moves the feed to the next available profile card.",
+    "category": "Swiping (Feed)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"profile card\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Pass\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"profile card\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Exhaust all cards shows the no-more-cards empty state",
+    "description": "Verifies that once the feed is exhausted, the UI displays an empty state indicating no more cards remain.",
+    "category": "Swiping (Feed)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Pass\" button repeatedly until no cards remain"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No more cards\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Refresh\" button is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Refresh from empty state loads new profile cards",
+    "description": "Verifies that using Refresh on the empty state requests and displays new cards.",
+    "category": "Swiping (Feed)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Pass\" button repeatedly until the empty state screen is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Refresh\" button is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Refresh\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"profile card\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Unlock flow reveals previously blurred likes",
+    "description": "Verifies clicking Unlock/Purchase and completing the purchase flow reveals liked profiles clearly.",
+    "category": "Liked Me (discovery of who liked you)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Unlock\" or \"Purchase\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Complete purchase\" or \"Subscribe\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Liked Me tab loads without errors and shows a stable header",
+    "description": "Verifies the Liked Me tab renders its main UI elements (header/tab label) after navigation.",
+    "category": "Liked Me (discovery of who liked you)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Liked Me\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Liked Me list\" (or the list container area) is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Empty state for Liked Me when there are no likes",
+    "description": "Verifies an informative empty state is shown when there are no users who liked the current user.",
+    "category": "Liked Me (discovery of who liked you)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No likes yet\" or \"Nobody has liked you yet\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Switching between Conversations/Matches list and Liked Me keeps Liked Me accessible",
+    "description": "Verifies the user can move away from Liked Me and return without the tab disappearing or breaking.",
+    "category": "Liked Me (discovery of who liked you)",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Liked Me\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Matches\" or \"Messages\" tab (the default matches/conversations tab)"
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "Non-premium user sees call-to-action to upgrade from within Liked Me",
+    "description": "Verifies the Liked Me view for non-premium includes an upgrade/unlock call-to-action entry point.",
+    "category": "Liked Me (discovery of who liked you)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a visible button labeled \"Unlock\", \"Upgrade\", or \"Purchase\" is present"
+      }
+    ]
+  },
+  {
+    "id": "TC024",
+    "title": "Open Matches list and enter a match conversation",
+    "description": "Verifies a logged-in user can view the matches list and open a chat thread from a match item.",
+    "category": "Matches and Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      },
+      {
+        "type": "action",
+        "description": "Click the first match item in the matches list"
+      }
+    ]
+  },
+  {
+    "id": "TC025",
+    "title": "Chat view loads correctly after selecting a match",
+    "description": "Verifies selecting a match opens the chat view with expected chat UI elements visible.",
+    "category": "Matches and Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the first match item in the matches list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Message input\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC026",
+    "title": "Send a message successfully from an open chat",
+    "description": "Verifies a user can type and send a message and see it appear in the chat thread.",
+    "category": "Matches and Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the first match item in the matches list"
+      },
+      {
+        "type": "action",
+        "description": "Click the message input"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Hello from E2E test\" into the message input"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Send\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Hello from E2E test\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC027",
+    "title": "Prevent sending an empty chat message",
+    "description": "Verifies the chat UI blocks sending a blank message and does not add a new message to the thread.",
+    "category": "Matches and Chat",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the first match item in the matches list"
+      },
+      {
+        "type": "action",
+        "description": "Click the message input"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Message cannot be empty\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC028",
+    "title": "Auto-message appears in match conversation",
+    "description": "Verifies that an auto-sent greeting message is present in the conversation thread for a match.",
+    "category": "Matches and Chat",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      },
+      {
+        "type": "action",
+        "description": "Click the match item that corresponds to the most recent conversation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Selam nasıl gidiyor\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC029",
+    "title": "Edit and save profile text fields (bio and interests)",
+    "description": "Verifies a user can edit bio/interests and see the updated details on the profile view after saving.",
+    "category": "Profile Management",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Profile\" navigation item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit Profile\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Updated bio for E2E test\" into the Bio field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Hiking, Coffee\" into the Interests field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Updated bio for E2E test\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Hiking, Coffee\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC030",
+    "title": "Avatar fallback is shown when profile has no avatar",
+    "description": "Verifies the UI shows a visible fallback avatar when the user profile has no avatar image available.",
+    "category": "Profile Management",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Profile\" navigation item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\"},{"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Avatar fallback\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC031",
+    "title": "Saving with no changes leaves details unchanged",
+    "description": "Verifies that saving without making any edits does not introduce unexpected changes and still returns to the profile view.",
+    "category": "Profile Management",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Profile\" navigation item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Profile details\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Edit Profile\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Profile details\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Edit Profile\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC032",
+    "title": "Toggle notifications ON and see saved state persist on Settings",
+    "description": "Verifies a user can enable notifications and the UI reflects the saved state after a reload.",
+    "category": "Settings",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Click the notifications toggle to turn notifications ON"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Notifications\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"On\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC033",
+    "title": "Toggle notifications OFF and see saved state persist on Settings",
+    "description": "Verifies a user can disable notifications and the UI reflects the saved state after a reload.",
+    "category": "Settings",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Click the notifications toggle to turn notifications OFF"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Notifications\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Off\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC034",
+    "title": "Open privacy/account settings section and see relevant controls",
+    "description": "Verifies a user can access the privacy/account section from Settings and view expected controls and information.",
+    "category": "Settings",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Privacy\" or \"Account\" settings option"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Privacy\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Account\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC035",
+    "title": "Logout from Settings redirects to Login",
+    "description": "Verifies the user can log out from Settings and is redirected to the login page.",
+    "category": "Settings",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Logout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      }
+    ]
+  },
+  {
+    "id": "TC036",
+    "title": "Initiate Delete Account and cancel in confirmation modal",
+    "description": "Verifies the destructive account action shows a confirmation modal and cancel keeps the user on Settings.",
+    "category": "Settings",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the account actions section"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Delete Account\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Confirm\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Delete\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Cancel\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      }
+    ]
+  },
+  {
+    "id": "TC037",
+    "title": "Confirm Delete Account and verify user is signed out to Login",
+    "description": "Verifies confirming account deletion triggers the deletion flow and results in the user being signed out to the login page.",
+    "category": "Settings",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the account actions section"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Delete Account\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Are you sure\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/login\""
+      }
+    ]
+  },
+  {
+    "id": "TC038",
+    "title": "Close confirmation modal via close control or Escape (non-destructive)",
+    "description": "Verifies the confirmation modal can be dismissed without taking action using a standard close method.",
+    "category": "Settings",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Settings\" link in the main navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the account actions section"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Delete Account\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Are you sure\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Press \"Escape\" key"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      }
+    ]
+  },
+  {
+    "id": "TC039",
+    "title": "Bottom nav: navigate to Swipe",
+    "description": "Verifies the bottom navigation can take an authenticated user to the Swipe page.",
+    "category": "Navigation & Protected Routes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"bottom navigation\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Swipe\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Swipe\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC040",
+    "title": "Bottom nav: navigate to Matches",
+    "description": "Verifies the bottom navigation can take an authenticated user to the Matches page.",
+    "category": "Navigation & Protected Routes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"bottom navigation\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Matches\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Matches\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC041",
+    "title": "Bottom nav: navigate to Profile",
+    "description": "Verifies the bottom navigation can take an authenticated user to the Profile page.",
+    "category": "Navigation & Protected Routes",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"bottom navigation\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Profile\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Profile\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC042",
+    "title": "Bottom nav persists and can move from Swipe to Matches",
+    "description": "Verifies the bottom navigation is present on Swipe and can be used to navigate to Matches without direct URL navigation.",
+    "category": "Navigation & Protected Routes",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Swipe\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Matches\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      }
+    ]
+  },
+  {
+    "id": "TC043",
+    "title": "Bottom nav persists and can move from Matches to Profile",
+    "description": "Verifies the bottom navigation is present on Matches and can be used to navigate to Profile without direct URL navigation.",
+    "category": "Navigation & Protected Routes",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Matches\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Profile\" icon in the bottom navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/profile\""
+      }
+    ]
+  },
+  {
+    "id": "TC044",
+    "title": "Bottom nav: navigate to Settings (main section access)",
+    "description": "Verifies an authenticated user can reach Settings via bottom navigation or an equivalent primary navigation entry if present.",
+    "category": "Navigation & Protected Routes",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"bottom navigation\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Settings\" entry in the primary navigation (bottom navigation or main menu)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/settings\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Settings\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC045",
+    "title": "Swipe screen shows loader/skeleton during initial card load and then renders cards",
+    "description": "Verifies the swipe discovery screen displays a loading state before showing swipe cards.",
+    "category": "UI/UX Quality Controls",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/swipe\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a loading indicator or skeleton placeholders are visible on the swipe screen"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify swipe cards are visible"
+      }
+    ]
+  },
+  {
+    "id": "TC046",
+    "title": "Swipe screen handles slow loading gracefully (loader visible before cards)",
+    "description": "Verifies that on a slower load, the user still sees a clear loading state before content appears.",
+    "category": "UI/UX Quality Controls",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Swipe\" tab or navigation item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a loading indicator or skeleton placeholders are visible on the swipe screen"
+      },
+      {
+        "type": "action",
+        "description": "Wait for swipe cards to appear"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify swipe cards are visible"
+      }
+    ]
+  },
+  {
+    "id": "TC047",
+    "title": "Matches screen shows an empty state when there are no matches",
+    "description": "Verifies the matches list displays an appropriate empty state instead of a blank or broken layout.",
+    "category": "UI/UX Quality Controls",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Matches\" tab or navigation item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an empty state message is visible (for example, text like \"No matches\" or \"No conversations yet\")"
+      }
+    ]
+  },
+  {
+    "id": "TC048",
+    "title": "Matches screen does not show empty state when matches exist",
+    "description": "Verifies that when matches exist, the matches list is visible and the empty-state messaging is not shown.",
+    "category": "UI/UX Quality Controls",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Matches\" tab or navigation item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/matches\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify at least one match or conversation item is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No matches\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC049",
+    "title": "Non-premium account: Liked Me profiles are blurred/hidden",
+    "description": "Verifies that a non-premium account sees Liked Me profiles blurred/hidden in Matches.",
+    "category": "Test Accounts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Upgrade\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC050",
+    "title": "Premium account: Liked Me profiles are fully visible",
+    "description": "Verifies that a premium account can view Liked Me profiles without blur/locking in Matches.",
+    "category": "Test Accounts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"premium.user@example.com\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"CorrectHorseBatteryStaple!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Upgrade\" is not visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Liked Me\" results grid/list is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC051",
+    "title": "Non-premium account: Premium action (Rewind) shows upgrade prompt",
+    "description": "Verifies that a non-premium account attempting Rewind is blocked and shown an upgrade/coins prompt.",
+    "category": "Test Accounts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Rewind\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Get Premium\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Coins\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC052",
+    "title": "Non-premium account: Premium action (Super Like) shows upgrade prompt",
+    "description": "Verifies that a non-premium account attempting Super Like is blocked and shown an upgrade/coins prompt.",
+    "category": "Test Accounts",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Super Like\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Get Premium\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Coins\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC053",
+    "title": "Premium account: Rewind action is available without upgrade prompt",
+    "description": "Verifies that a premium account can access Rewind without being prompted to upgrade.",
+    "category": "Test Accounts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"premium.user@example.com\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"CorrectHorseBatteryStaple!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Rewind\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Get Premium\" is not visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Swipe\" card area is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC054",
+    "title": "Premium account: Super Like action is available without upgrade prompt",
+    "description": "Verifies that a premium account can use Super Like without seeing an upgrade prompt.",
+    "category": "Test Accounts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"premium.user@example.com\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"CorrectHorseBatteryStaple!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Swipe\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Super Like\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Get Premium\" is not visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Swipe\" card area is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC055",
+    "title": "Non-premium account: Liked Me tab exists but indicates locked state",
+    "description": "Verifies that the Liked Me tab is present for non-premium users and clearly indicates locked/limited visibility.",
+    "category": "Test Accounts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the primary navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Liked Me\" tab is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Premium\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC056",
+    "title": "Premium account: Liked Me tab shows content without lock messaging",
+    "description": "Verifies that the premium user does not see lock/upgrade messaging while viewing Liked Me.",
+    "category": "Test Accounts",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"premium.user@example.com\" into the email/username field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"CorrectHorseBatteryStaple!\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Log in\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Matches\" in the primary navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Liked Me\" tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Upgrade\" is not visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Premium\" is not visible"
+      }
+    ]
+  }
+]

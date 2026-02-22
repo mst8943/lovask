@@ -1,0 +1,84 @@
+version: "2"
+type: frontend
+tech_stack:
+  - typescript
+  - next
+  - react
+  - tailwindcss
+  - supabase-js
+  - zustand
+  - react-query
+routes:
+  - path: /login
+    file: app/(auth)/login/page.tsx
+    auth_required: false
+    description: User login page
+  - path: /register
+    file: app/(auth)/register/page.tsx
+    auth_required: false
+    description: User registration page
+  - path: /onboarding
+    file: app/(auth)/onboarding/page.tsx
+    auth_required: true
+    description: User onboarding flow
+  - path: /swipe
+    file: app/(main)/swipe/page.tsx
+    auth_required: true
+    description: Main swipe interface for matching
+  - path: /matches
+    file: app/(main)/matches/page.tsx
+    auth_required: true
+    description: List of matches and conversations
+  - path: /profile
+    file: app/(main)/profile/page.tsx
+    auth_required: true
+    description: User profile view and edit
+  - path: /settings
+    file: app/(main)/settings/page.tsx
+    auth_required: true
+    description: User settings
+features:
+  - name: User Authentication
+    description: Login, registration, and onboarding flows
+    files:
+      - app/(auth)/login/page.tsx
+      - app/(auth)/register/page.tsx
+      - app/(auth)/onboarding/page.tsx
+    entry_route: /login
+    user_interactions:
+      - Fill email and password on login
+      - Click Login button
+      - Fill registration form details
+      - Click Register button
+      - Complete onboarding steps
+    api_calls:
+      - method: POST
+        endpoint: /auth/v1/signin
+    auth_required: false
+  - name: Swiping
+    description: Core matching functionality
+    files:
+      - app/(main)/swipe/page.tsx
+      - components/SwipeCard.tsx
+    entry_route: /swipe
+    user_interactions:
+      - View potential match profile
+      - Click Like button
+      - Click Pass button
+      - Swipe card left or right
+    api_calls:
+        - method: POST
+          endpoint: /api/matches/swipe
+    auth_required: true
+  - name: Profile Management
+    description: View and edit user profile
+    files:
+      - app/(main)/profile/page.tsx
+    entry_route: /profile
+    user_interactions:
+      - View own profile details
+      - Click Edit Profile
+      - Update profile fields
+      - Upload photos
+    auth_required: true
+known_limitations: []

@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://127.0.0.1:3000",
+  "loginUser": "user.demo@lovask.local",
+  "loginPassword": "LovaskUser#2026!",
+  "executionArgs": {
+    "projectName": "lovask-web",
+    "projectPath": "c:/MAMP/htdocs/lovask/lovask-web",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-vDxpA21bXMee8J-Ltaot5-uEkD5RjdxdnUQNVpyWi3sv1sdpkGt3nCzK9BYc9v9hcIKFNj3JH463-2fZ02OCdPvWOJbsnz68HuNkGXDE9xaxWGPzDEXTI2yJNS7hsXmXtLo"
+    }
+  },
+  "serverPort": 53289,
+  "proxy": "http://a7b53544-cd1b-4123-80ca-34e5ced60586:M97C3QIXtKEiyUiodlv5kclp0Z00rkyS@tun.testsprite.com:8080"
+}

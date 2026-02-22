@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]: Aura
+      - generic [ref=e6]:
+        - button "110" [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e13]: "110"
+          - img [ref=e14]
+        - button "Tema değiştir" [ref=e15]:
+          - img [ref=e16]
+        - link "30" [ref=e18] [cursor=pointer]:
+          - /url: /notifications
+          - img [ref=e19]
+          - generic [ref=e22]: "30"
+        - button "Profil" [ref=e24]:
+          - img "Profil" [ref=e26]
+          - img [ref=e27]
+    - main [ref=e29]:
+      - generic [ref=e30]:
+        - heading "Ayarlar" [level=1] [ref=e32]
+        - generic [ref=e33]:
+          - button "Hesap Şifre ve hesap silme" [ref=e34]:
+            - img [ref=e36]
+            - generic [ref=e39]:
+              - heading "Hesap" [level=3] [ref=e40]
+              - paragraph [ref=e41]: Şifre ve hesap silme
+          - button "Dogrulama E-posta, cihaz ve fotoğraf doğrulama" [ref=e42]:
+            - img [ref=e44]
+            - generic [ref=e47]:
+              - heading "Dogrulama" [level=3] [ref=e48]
+              - paragraph [ref=e49]: E-posta, cihaz ve fotoğraf doğrulama
+          - button "Gizlilik Keşfet görünürlüğü" [ref=e50]:
+            - img [ref=e52]
+            - generic [ref=e54]:
+              - heading "Gizlilik" [level=3] [ref=e55]
+              - paragraph [ref=e56]: Keşfet görünürlüğü
+          - button "Engellediklerim Engellediğin kişileri yönet" [ref=e57]:
+            - img [ref=e59]
+            - generic [ref=e62]:
+              - heading "Engellediklerim" [level=3] [ref=e63]
+              - paragraph [ref=e64]: Engellediğin kişileri yönet
+          - button "Bildirimler Push ve e-posta tercihleri" [ref=e65]:
+            - img [ref=e67]
+            - generic [ref=e70]:
+              - heading "Bildirimler" [level=3] [ref=e71]
+              - paragraph [ref=e72]: Push ve e-posta tercihleri
+          - button "Destek Sorun bildir ve destek al" [ref=e73]:
+            - img [ref=e75]
+            - generic [ref=e77]:
+              - heading "Destek" [level=3] [ref=e78]
+              - paragraph [ref=e79]: Sorun bildir ve destek al
+        - generic [ref=e80]:
+          - generic [ref=e81]: Dil
+          - generic [ref=e82]: Uygulama dilini secin
+          - generic [ref=e83]:
+            - generic [ref=e84]: Dil
+            - combobox [ref=e85]:
+              - option "Türkçe" [selected]
+              - option "English"
+    - navigation [ref=e86]:
+      - generic [ref=e87]:
+        - link "Swipe" [ref=e88] [cursor=pointer]:
+          - /url: /swipe
+          - img [ref=e90]
+          - generic [ref=e96]: Swipe
+        - link "Keşfet" [ref=e97] [cursor=pointer]:
+          - /url: /feed
+          - img [ref=e99]
+          - generic [ref=e101]: Keşfet
+        - link "Beğeniler" [ref=e102] [cursor=pointer]:
+          - /url: /liked-you
+          - img [ref=e104]
+          - generic [ref=e106]: Beğeniler
+        - link "Sohbetler" [ref=e107] [cursor=pointer]:
+          - /url: /matches
+          - img [ref=e109]
+          - generic [ref=e111]: Sohbetler
+        - link "Profil" [ref=e112] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e114]
+          - generic [ref=e117]: Profil
+  - generic [ref=e118]:
+    - img [ref=e120]
+    - button "Open Tanstack query devtools" [ref=e168] [cursor=pointer]:
+      - img [ref=e169]
+  - button "Open Next.js Dev Tools" [ref=e222] [cursor=pointer]:
+    - img [ref=e223]
+  - alert [ref=e226]
+```
