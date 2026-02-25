@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Heart, MapPin, Star, Circle, X } from 'lucide-react'
+import { Heart, MapPin, Star, Circle, X, ShieldCheck, Smartphone, Camera, IdCard, Video } from 'lucide-react'
 import { ProfileWithMeta } from '@/services/feedService'
 import { clsx } from 'clsx'
 import { useEffect, useState } from 'react'
 import { getProfileAvatar } from '@/utils/avatar'
+import { getLocationLabel } from '@/utils/location'
 import { Button } from '@/components/ui/Button'
 import { usePresenceStore } from '@/store/usePresenceStore'
+import { canShowLastActive } from '@/utils/lastActive'
 
 type ProfileListItemProps = {
     profile: ProfileWithMeta
@@ -35,18 +37,33 @@ export default function ProfileListItem({
     const isOnlineRealtime = usePresenceStore((s) => s.isUserOnline(profile.id))
     const lastActive = profile.last_active_at ? new Date(profile.last_active_at).getTime() : 0
     const isOnlineFallback = !!lastActive && now - lastActive < 10 * 60 * 1000
-    const isOnline = isOnlineRealtime || isOnlineFallback
+    const canShowPresence = canShowLastActive(profile.last_active_visibility, false)
+    const isHiddenPresence = profile.last_active_visibility === 'hidden'
+    const isOnline = canShowPresence && (isOnlineRealtime || isOnlineFallback)
 
     useEffect(() => {
         const id = setInterval(() => setNow(Date.now()), 60000)
         return () => clearInterval(id)
     }, [])
+    const verificationMeta: Record<string, { label: string; icon: typeof ShieldCheck }> = {
+        device: { label: 'Cihaz', icon: Smartphone },
+        photo: { label: 'Fotoğraf', icon: Camera },
+        selfie: { label: 'Fotoğraf', icon: Camera },
+        kyc: { label: 'Kimlik', icon: IdCard },
+        video: { label: 'Video', icon: Video },
+        email: { label: 'E-posta', icon: ShieldCheck },
+    }
+    const verifiedTypes = Array.from(new Set((profile.verified_types || []).map((t) => (t === 'selfie' ? 'photo' : t))))
 
     return (
         <div className="glass-panel rounded-2xl p-4 flex gap-4">
             <div className="relative w-24 h-28 rounded-xl overflow-hidden shrink-0 border border-white/10">
                 <Image src={photoUrl} alt={profile.display_name || 'Kullanıcı'} fill className="object-cover" />
-                {isOnline && (
+                {isHiddenPresence ? (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-black/60 text-slate-300">
+                        Gizli
+                    </div>
+                ) : isOnline && (
                     <div className="absolute top-2 left-2 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-black/60 text-green-300">
                         <Circle size={8} className="fill-green-400 text-green-400" />
                         Çevrim içi
@@ -57,13 +74,30 @@ export default function ProfileListItem({
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3">
                     <Link href={`/profiles/${profile.id}`} className="min-w-0">
-                        <h3 className="text-lg font-bold truncate">
+                        <h3 className="text-lg font-bold truncate flex items-center gap-1.5">
                             {profile.display_name}
                             {profile.age ? <span className="opacity-70 font-normal">, {profile.age}</span> : null}
+                            {verifiedTypes.length > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-300">
+                                    {verifiedTypes.slice(0, 4).map((type) => {
+                                        const meta = verificationMeta[type]
+                                        const Icon = meta?.icon || ShieldCheck
+                                        return (
+                                            <span key={type} title={meta?.label || type}>
+                                                <Icon size={14} />
+                                            </span>
+                                        )
+                                    })}
+                                </span>
+                            ) : profile.is_verified ? (
+                                <span title="Doğrulanmış">
+                                    <ShieldCheck size={14} className="text-emerald-300" />
+                                </span>
+                            ) : null}
                         </h3>
                         <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                             <MapPin size={12} />
-                            <span className="truncate">{profile.city || 'Bilinmiyor'}</span>
+                            <span className="truncate">{getLocationLabel(profile)}</span>
                             {typeof profile.distance_km === 'number' && (
                                 <span className="ml-2 text-[10px] text-gray-500">
                                     {profile.distance_km.toFixed(0)} km
@@ -81,11 +115,6 @@ export default function ProfileListItem({
                 </div>
 
                 <div className="flex items-center gap-2 mt-1">
-                    {profile.is_verified && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">
-                            Doğrulandı
-                        </span>
-                    )}
                     {typeof profile.compatibility_score === 'number' && profile.compatibility_score > 0 && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                             Uyum {profile.compatibility_score}%

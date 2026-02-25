@@ -1,7 +1,0 @@
-{
-  "line715": "    const hasAcceptedRequest = messageRequest?.status === 'accepted'\r",
-  "line716": "    return (\r",
-  "line717": "        <div className=\"fixed inset-x-0 top-[60px] bottom-[64px] flex flex-col bg-[var(--background)] pb-0 md:static md:mx-auto md:max-w-5xl md:pb-8\">\r",
-  "line718": "            <div className=\"absolute inset-0 pointer-events-none\">\r",
-  "line719": "                <div className=\"absolute -top-16 -left-10 w-48 h-48 bg-pink-500/10 blur-3xl rounded-full\" />\r"
-}

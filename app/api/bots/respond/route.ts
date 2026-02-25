@@ -53,18 +53,105 @@ const detectLanguageFromText = (text: string): string | null => {
 const getFallbackReply = (lang: string): string => {
     switch (lang) {
         case 'tr':
-            return 'Mesajini aldim. Biraz daha anlatir misin?'
+            return 'Mesajını aldım. Biraz daha anlatır mısın?'
         case 'en':
             return 'I got your message. Can you tell me a bit more?'
         case 'de':
-            return 'Ich habe deine Nachricht gesehen. Magst du ein bisschen mehr erzaehlen?'
+            return 'Ich habe deine Nachricht gesehen. Magst du ein bisschen mehr erzählen?'
         case 'fr':
-            return 'J’ai bien recu ton message. Tu peux m’en dire un peu plus ?'
+            return 'J’ai bien reçu ton message. Tu peux m’en dire un peu plus ?'
         case 'ar':
             return 'وصلت رسالتك. هل يمكنك أن تخبرني المزيد؟'
         default:
-            return 'Mesajini aldim. Biraz daha anlatir misin?'
+            return 'Mesajını aldım. Biraz daha anlatır mısın?'
     }
+}
+
+type FallbackSettings = {
+    enabled?: boolean
+    messages?: Record<string, string[]>
+    groups?: Record<string, { messages?: Record<string, string[]>; neutral?: Record<string, string[]> }>
+    delays?: { group1?: number; group2?: number; group3?: number }
+    message_tr?: string | null
+    message_en?: string | null
+    message_de?: string | null
+    message_fr?: string | null
+    message_ar?: string | null
+}
+
+const pickFallbackMessage = (lang: string, settings?: FallbackSettings | null): string | null => {
+    const list = settings?.messages?.[lang]
+    if (Array.isArray(list) && list.length > 0) {
+        const usable = list.map((v) => (v || '').trim()).filter(Boolean)
+        if (usable.length > 0) {
+            return usable[Math.floor(Math.random() * usable.length)]
+        }
+    }
+    const legacyMap: Record<string, string | null | undefined> = {
+        tr: settings?.message_tr,
+        en: settings?.message_en,
+        de: settings?.message_de,
+        fr: settings?.message_fr,
+        ar: settings?.message_ar,
+    }
+    const legacy = legacyMap[lang]
+    if (legacy && legacy.trim()) return legacy.trim()
+    return null
+}
+
+const getFallbackReplyWithSettings = (lang: string, settings?: FallbackSettings | null): string => {
+    if (settings?.enabled !== false) {
+        const picked = pickFallbackMessage(lang, settings)
+        if (picked) return picked
+    }
+    return getFallbackReply(lang)
+}
+
+const detectAggressive = (text: string): boolean => {
+    const raw = (text || '').toLowerCase()
+    if (!raw) return false
+    const aggressiveWords = [
+        'aptal', 'salak', 'gerizekalı', 'şerefsiz', 'mal', 'siktir', 'orospu', 'piç',
+        'fuck', 'fck', 'shit', 'bitch', 'idiot', 'stupid', 'asshole', 'moron',
+    ]
+    return aggressiveWords.some((w) => raw.includes(w))
+}
+
+const getFallbackGroupFromStreak = (streak: number) => {
+    if (streak <= 1) return 'group1'
+    if (streak === 2) return 'group2'
+    return 'group3'
+}
+
+const getFallbackDelaySeconds = (group: string, settings?: FallbackSettings | null) => {
+    const delays = settings?.delays || {}
+    if (group === 'group1') return Number(delays.group1 ?? 300)
+    if (group === 'group2') return Number(delays.group2 ?? 600)
+    return Number(delays.group3 ?? 0)
+}
+
+const getFallbackList = (
+    lang: string,
+    settings: FallbackSettings | null | undefined,
+    group: string,
+    aggressive: boolean
+): string[] => {
+    if (!settings || settings.enabled === false) return []
+    const groups = settings.groups || {}
+    const groupData = groups[group] || {}
+    const normal = groupData.messages || {}
+    const neutral = groupData.neutral || {}
+    const list = (aggressive ? neutral[lang] : normal[lang]) || []
+    if (Array.isArray(list) && list.length > 0) {
+        return list.map((v) => (v || '').trim()).filter(Boolean)
+    }
+    if (settings.messages && group === 'group1') {
+        const legacyList = settings.messages[lang]
+        if (Array.isArray(legacyList)) {
+            return legacyList.map((v) => (v || '').trim()).filter(Boolean)
+        }
+    }
+    return []
 }
 
 const detectUnsafe = (text: string): string | null => {
@@ -81,12 +168,8 @@ export async function POST(req: Request) {
     try {
         const supabase = await createClient()
         const { data: auth } = await supabase.auth.getUser()
-        if (!auth.user) return new NextResponse('Unauthorized', { status: 401 })
-        const requestStarted = Date.now()
-
-        const rate = rateLimit(`bots-respond:${auth.user.id}`, 6, 60_000)
-        if (!rate.ok) {
-            return new NextResponse('Too many requests', { status: 429, headers: rateLimitHeaders(6, rate) })
+        if (!auth.user) {
+            return new NextResponse('Unauthorized', { status: 401 })
         }
 
         const body = await req.json()
@@ -94,8 +177,34 @@ export async function POST(req: Request) {
         if (!match_id || !bot_id || !user_message) {
             return new NextResponse('Missing parameters', { status: 400 })
         }
-
         const admin = createAdminClient()
+        // Resolve participants directly from match to avoid auth session fragility in route handlers.
+        const { data: match } = await admin
+            .from('matches')
+            .select('user_a,user_b')
+            .eq('id', match_id)
+            .maybeSingle()
+        if (!match) return new NextResponse('Unauthorized', { status: 401 })
+        const { data: participants } = await admin
+            .from('profiles')
+            .select('id,is_bot')
+            .in('id', [match.user_a, match.user_b])
+        const bot = (participants || []).find((p) => p.is_bot)
+        const human = (participants || []).find((p) => !p.is_bot)
+        if (!bot || bot.id !== bot_id || !human) {
+            return new NextResponse('Unauthorized', { status: 401 })
+        }
+        if (auth.user.id !== human.id) {
+            return new NextResponse('Forbidden', { status: 403 })
+        }
+
+        const authUser = { id: human.id }
+        const requestStarted = Date.now()
+
+        const rate = rateLimit(`bots-respond:${authUser.id}`, 6, 60_000)
+        if (!rate.ok) {
+            return new NextResponse('Too many requests', { status: 429, headers: rateLimitHeaders(6, rate) })
+        }
 
         const { data: botProfile } = await admin
             .from('profiles')
@@ -125,7 +234,7 @@ export async function POST(req: Request) {
         const { data: quarantine } = await admin
             .from('bot_quarantine')
             .select('id,active')
-            .eq('user_id', auth.user.id)
+            .eq('user_id', authUser.id)
             .maybeSingle()
         if (quarantine?.active) {
             return NextResponse.json({ skipped: 'quarantine' })
@@ -181,7 +290,7 @@ export async function POST(req: Request) {
             : ((botConfig as BotSettings) || {})
         const fallback: BotSettings = (globalSettings as BotSettings) || {}
         const tone = (useGlobal ? (base.tone || fallback.tone) : (botConfig?.tone || fallback.tone)) || 'playful'
-        const languageMode = (useGlobal ? (base.language_mode || fallback.language_mode) : (botConfig?.language_mode || fallback.language_mode)) || 'auto'
+        const languageMode: string = (useGlobal ? (base.language_mode || fallback.language_mode) : (botConfig?.language_mode || fallback.language_mode)) || 'auto'
         const intensity = (useGlobal ? (base.engagement_intensity || fallback.engagement_intensity) : (botConfig?.engagement_intensity || fallback.engagement_intensity)) || 'medium'
         const readReceiptDelay = (useGlobal ? (base.read_receipt_delay_s || fallback.read_receipt_delay_s) : (botConfig?.read_receipt_delay_s || fallback.read_receipt_delay_s)) || 10
         const detectedLanguage = languageMode === 'auto' ? detectLanguageFromText(user_message) : null
@@ -197,7 +306,7 @@ export async function POST(req: Request) {
                 .from('bot_cooldowns')
                 .select('last_sent_at')
                 .eq('bot_id', bot_id)
-                .eq('user_id', auth.user.id)
+                .eq('user_id', authUser.id)
                 .maybeSingle()
             if (cd?.last_sent_at) {
                 const last = new Date(cd.last_sent_at).getTime()
@@ -262,6 +371,7 @@ export async function POST(req: Request) {
         const systemPrompt = [
             'You are a friendly dating app user. Respond naturally and keep responses concise.',
             'Do not mention you are an AI or a bot.',
+            'If the user writes in Turkish, reply only in Turkish and avoid any non-Latin scripts.',
             botProfile
                 ? `Profile: ${botProfile.display_name}, ${botProfile.age}, ${botProfile.gender}, ${botProfile.city}. Bio: ${botProfile.bio || ''}`
                 : '',
@@ -289,7 +399,7 @@ export async function POST(req: Request) {
             await admin.from('bot_safety_events').insert({
                 bot_id,
                 match_id,
-                user_id: auth.user.id,
+                user_id: authUser.id,
                 category: unsafeUser,
                 content: user_message,
             })
@@ -324,8 +434,104 @@ export async function POST(req: Request) {
             }
         }
 
-        const apiKey = process.env.OPENROUTER_API_KEY
-        if (!apiKey) return new NextResponse('Missing OPENROUTER_API_KEY', { status: 500 })
+        const { data: openrouterSettings } = await admin
+            .from('app_settings')
+            .select('value')
+            .eq('key', 'openrouter_settings')
+            .maybeSingle()
+        const openrouterValue = (openrouterSettings?.value || {}) as { api_key?: string; model?: string; base_url?: string }
+        const { data: fallbackSettings } = await admin
+            .from('app_settings')
+            .select('value')
+            .eq('key', 'openrouter_fallback')
+            .maybeSingle()
+        const fallbackValue = (fallbackSettings?.value || {}) as FallbackSettings
+        const apiKey = openrouterValue.api_key || process.env.OPENROUTER_API_KEY
+        const model = openrouterValue.model || DEFAULT_MODEL
+        const baseUrl = openrouterValue.base_url || 'https://openrouter.ai/api/v1/chat/completions'
+
+        const fetchUserStreak = async () => {
+            const { data: recent } = await admin
+                .from('messages')
+                .select('sender_id,created_at,content,type')
+                .eq('match_id', match_id)
+                .order('created_at', { ascending: false })
+                .limit(30)
+            let streak = 0
+            let lastUserMessage: { created_at: string; content: string | null } | null = null
+            for (const msg of recent || []) {
+                if (msg.sender_id === bot_id) break
+                if (msg.sender_id === authUser.id) {
+                    streak += 1
+                    if (!lastUserMessage) {
+                        lastUserMessage = { created_at: msg.created_at, content: msg.content }
+                    }
+                }
+            }
+            return { streak, lastUserMessage }
+        }
+
+        const sendFallbackMessage = async (group: string, triggeredAt: string) => {
+            const { streak, lastUserMessage } = await fetchUserStreak()
+            if (!lastUserMessage) return
+            const expectedGroup = getFallbackGroupFromStreak(streak)
+            if (expectedGroup !== group) return
+            const { data: botAfter } = await admin
+                .from('messages')
+                .select('id')
+                .eq('match_id', match_id)
+                .eq('sender_id', bot_id)
+                .gt('created_at', triggeredAt)
+                .limit(1)
+            if (botAfter && botAfter.length > 0) return
+
+            const langGuess = detectLanguageFromText(lastUserMessage.content || '') || 'tr'
+            const aggressive = detectAggressive(lastUserMessage.content || '')
+
+            const { data: usedRows } = await admin
+                .from('messages')
+                .select('content')
+                .eq('match_id', match_id)
+                .eq('sender_id', bot_id)
+                .eq('type', 'fallback')
+                .limit(500)
+            const used = new Set((usedRows || []).map((r) => (r.content || '').trim()).filter(Boolean))
+
+            const list = getFallbackList(langGuess, fallbackValue, group, aggressive)
+            const usable = list.filter((v) => !used.has(v))
+            if (usable.length === 0) return
+            const candidate = usable[Math.floor(Math.random() * usable.length)]
+
+            await admin.from('messages').insert({
+                match_id,
+                sender_id: bot_id,
+                content: candidate,
+                type: 'fallback',
+            })
+        }
+
+        const scheduleFallback = async (group: string, delaySeconds: number, triggeredAt: string) => {
+            if (fallbackValue?.enabled === false) return
+            if (delaySeconds <= 0) {
+                await sendFallbackMessage(group, triggeredAt)
+                return
+            }
+            setTimeout(() => {
+                void sendFallbackMessage(group, triggeredAt)
+            }, delaySeconds * 1000)
+        }
+        if (!apiKey) {
+            if (fallbackValue?.enabled === false) {
+                return NextResponse.json({ scheduled: false, disabled: true }, { headers: rateLimitHeaders(6, rate) })
+            }
+            const { streak, lastUserMessage } = await fetchUserStreak()
+            const group = getFallbackGroupFromStreak(streak)
+            const delaySeconds = getFallbackDelaySeconds(group, fallbackValue)
+            if (lastUserMessage?.created_at) {
+                await scheduleFallback(group, delaySeconds, lastUserMessage.created_at)
+            }
+            return NextResponse.json({ scheduled: true, group, delay_s: delaySeconds }, { headers: rateLimitHeaders(6, rate) })
+        }
 
         // Response delay
         const minDelay = schedule?.response_delay_min_s ?? groupSettings?.response_delay_min_s ?? globalSettings?.response_delay_min_s ?? 2
@@ -339,7 +545,7 @@ export async function POST(req: Request) {
             const { data: viewer } = await admin
                 .from('users')
                 .select('is_premium')
-                .eq('id', auth.user.id)
+                .eq('id', authUser.id)
                 .maybeSingle()
 
             let hasReadReceipts = !!viewer?.is_premium
@@ -348,7 +554,7 @@ export async function POST(req: Request) {
                     .from('read_receipt_unlocks')
                     .select('id')
                     .eq('match_id', match_id)
-                    .eq('user_id', auth.user.id)
+                    .eq('user_id', authUser.id)
                     .maybeSingle()
                 hasReadReceipts = !!unlock
             }
@@ -358,7 +564,7 @@ export async function POST(req: Request) {
                     .from('messages')
                     .select('id')
                     .eq('match_id', match_id)
-                    .eq('sender_id', auth.user.id)
+                    .eq('sender_id', authUser.id)
                     .order('created_at', { ascending: false })
                     .limit(1)
                     .maybeSingle()
@@ -380,18 +586,19 @@ export async function POST(req: Request) {
 
         const maxTokens =
             intensity === 'low' ? 120 :
-            intensity === 'high' ? 300 : 200
+                intensity === 'high' ? 300 : 200
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const referer = process.env.APP_ORIGIN || req.headers.get('origin') || 'http://localhost'
+        const response = await fetch(baseUrl, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': 'http://localhost',
+                'HTTP-Referer': referer,
                 'X-Title': 'Lovask',
             },
             body: JSON.stringify({
-                model: DEFAULT_MODEL,
+                model,
                 messages: [
                     { role: 'system', content: systemPrompt },
                     ...conversation,
@@ -401,16 +608,28 @@ export async function POST(req: Request) {
             }),
         })
 
-        if (!response.ok) {
-            const text = await response.text()
-            return new NextResponse(text || 'OpenRouter error', { status: 500 })
+        let json: { choices?: Array<{ message?: { content?: string } }>; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } } | null = null
+        let botReply = ''
+        if (response.ok) {
+            json = await response.json()
+            botReply = json?.choices?.[0]?.message?.content?.trim() || ''
+        } else {
+            // Model/provider errors should not break chat UX; fallback reply keeps flow alive.
+            void response.text().catch(() => '')
+            botReply = ''
         }
 
-        const json = await response.json()
-        let botReply = json?.choices?.[0]?.message?.content?.trim()
         if (!botReply) {
-            const lang = effectiveLanguage === 'auto' ? 'tr' : effectiveLanguage
-            botReply = getFallbackReply(lang)
+            if (fallbackValue?.enabled === false) {
+                return NextResponse.json({ scheduled: false, disabled: true }, { headers: rateLimitHeaders(6, rate) })
+            }
+            const { streak, lastUserMessage } = await fetchUserStreak()
+            const group = getFallbackGroupFromStreak(streak)
+            const delaySeconds = getFallbackDelaySeconds(group, fallbackValue)
+            if (lastUserMessage?.created_at) {
+                await scheduleFallback(group, delaySeconds, lastUserMessage.created_at)
+            }
+            return NextResponse.json({ scheduled: true, group, delay_s: delaySeconds }, { headers: rateLimitHeaders(6, rate) })
         }
 
         const unsafeBot = detectUnsafe(botReply)
@@ -418,12 +637,12 @@ export async function POST(req: Request) {
             await admin.from('bot_safety_events').insert({
                 bot_id,
                 match_id,
-                user_id: auth.user.id,
+                user_id: authUser.id,
                 category: unsafeBot,
                 content: botReply,
             })
             const lang = effectiveLanguage === 'auto' ? 'tr' : effectiveLanguage
-            botReply = getFallbackReply(lang)
+            botReply = getFallbackReplyWithSettings(lang, fallbackValue)
         }
 
         await admin.from('messages').insert({
@@ -444,7 +663,7 @@ export async function POST(req: Request) {
 
         await admin.from('bot_cooldowns').upsert({
             bot_id,
-            user_id: auth.user.id,
+            user_id: authUser.id,
             last_sent_at: new Date().toISOString(),
         }, { onConflict: 'bot_id,user_id' })
 
@@ -475,9 +694,9 @@ export async function POST(req: Request) {
         const usage = json?.usage || {}
         if (usage?.total_tokens) {
             await admin.from('ai_usage').insert({
-                user_id: auth.user.id,
+                user_id: authUser.id,
                 bot_id,
-                model: DEFAULT_MODEL,
+                model,
                 tokens_in: usage.prompt_tokens || 0,
                 tokens_out: usage.completion_tokens || 0,
                 cost_usd: 0,

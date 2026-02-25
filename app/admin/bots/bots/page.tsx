@@ -1,7 +1,6 @@
 ﻿﻿'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { fetchBots, fetchBotGroups, createBotGroup } from '@/services/botAdminService'
-import { createClient } from '@/lib/supabase/client'
 import Spinner from '@/components/ui/Spinner'
 import { usePresenceStore } from '@/store/usePresenceStore'
 type BotRow = {
@@ -146,6 +145,17 @@ type BotEdit = {
     personality_prompt?: string
 }
 type NameRow = { name: string; gender?: string | null }
+const postJson = async <T,>(url: string, payload?: Record<string, unknown>) => {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {}),
+    })
+    if (!res.ok) {
+        throw new Error(await res.text())
+    }
+    return (await res.json()) as T
+}
 export default function AdminBotsPage() {
     const [bots, setBots] = useState<BotRow[]>([])
     const [groups, setGroups] = useState<GroupRow[]>([])
@@ -460,12 +470,15 @@ export default function AdminBotsPage() {
         for (const id of ids) {
             const bot = bots.find((b) => b.id === id)
             const current = bot?.bot_configs?.behavior_settings || {}
-            await createClient().from('bot_configs').update({
-                behavior_settings: {
-                    ...current,
-                    group_id: bulkGroupId,
+            await postJson('/api/admin/bots/update', {
+                bot_id: id,
+                config: {
+                    behavior_settings: {
+                        ...current,
+                        group_id: bulkGroupId,
+                    },
                 },
-            }).eq('user_id', id)
+            })
         }
         setSelected({})
         await load()
@@ -1039,7 +1052,6 @@ export default function AdminBotsPage() {
     )
 }
 function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolean; onSelect: (v: boolean) => void }) {
-    const supabase = useMemo(() => createClient(), [])
     const [stats, setStats] = useState<{ likes: number; matches: number; messages: number } | null>(null)
     const [loading, setLoading] = useState(false)
     const [expanded, setExpanded] = useState(false)
@@ -1091,38 +1103,31 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
     }
     const loadStats = async () => {
         setLoading(true)
-        const likes = await supabase
-            .from('likes')
-            .select('id', { count: 'exact', head: true })
-            .eq('from_user', bot.id)
-        const matches = await supabase
-            .from('matches')
-            .select('id', { count: 'exact', head: true })
-            .or(`user_a.eq.${bot.id},user_b.eq.${bot.id}`)
-        const messages = await supabase
-            .from('messages')
-            .select('id', { count: 'exact', head: true })
-            .eq('sender_id', bot.id)
-        setStats({
-            likes: likes.count || 0,
-            matches: matches.count || 0,
-            messages: messages.count || 0,
-        })
-        setLoading(false)
+        try {
+            const data = await postJson<{ likes: number; matches: number; messages: number }>('/api/admin/bots/stats', {
+                bot_id: bot.id,
+            })
+            setStats({
+                likes: data.likes || 0,
+                matches: data.matches || 0,
+                messages: data.messages || 0,
+            })
+        } finally {
+            setLoading(false)
+        }
     }
     const toggleActive = async () => {
         const current = bot.bot_configs?.behavior_settings?.active !== false
         const next = !current
-        await supabase.from('bot_configs').update({
-            behavior_settings: {
-                ...(bot.bot_configs?.behavior_settings || {}),
-                active: next,
-            }
-        }).eq('user_id', bot.id)
+        const data = await postJson<{ ok: boolean; behavior_settings: Record<string, unknown> }>('/api/admin/bots/toggle-active', {
+            bot_id: bot.id,
+            active: next,
+            behavior_settings: bot.bot_configs?.behavior_settings || {},
+        })
         if (!bot.bot_configs) {
             bot.bot_configs = { behavior_settings: { active: next } }
         } else {
-            bot.bot_configs.behavior_settings = {
+            bot.bot_configs.behavior_settings = (data?.behavior_settings as Record<string, unknown>) || {
                 ...(bot.bot_configs.behavior_settings || {}),
                 active: next,
             }
@@ -1130,7 +1135,7 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
     }
     const toggleUseGlobal = async () => {
         const next = !(bot.bot_configs?.use_global !== false)
-        await supabase.from('bot_configs').update({ use_global: next }).eq('user_id', bot.id)
+        await postJson('/api/admin/bots/toggle-global', { bot_id: bot.id, use_global: next })
         if (!bot.bot_configs) {
             bot.bot_configs = { use_global: next }
         } else {
@@ -1152,7 +1157,10 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
         if (active_hours_raw !== undefined) {
             payload.active_hours = normalizeActiveHours(active_hours_raw)
         }
-        await supabase.from('bot_configs').update(payload).eq('user_id', bot.id)
+        await postJson('/api/admin/bots/update', {
+            bot_id: bot.id,
+            config: payload,
+        })
     }
     const isOnlineFallback = bot.last_active_at ? now - new Date(bot.last_active_at).getTime() < 10 * 60 * 1000 : false
     const isOnline = onlineUsers.has(bot.id) || isOnlineFallback
@@ -1480,42 +1488,45 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
                         onClick={async () => {
                             setSaving(true)
                             try {
-                                await supabase.from('profiles').update({
-                                    display_name: edit.display_name,
-                                    age: edit.age,
-                                    gender: edit.gender,
-                                    city: edit.city,
-                                    bio: edit.bio,
-                                    photos: (edit.photos || '')
-                                        .split(',')
-                                        .map((p: string) => p.trim())
-                                        .filter(Boolean),
-                                }).eq('id', bot.id)
-                                await supabase.from('users').update({
-                                    coin_balance: Number(edit.coin_balance || 0),
-                                    is_premium: !!edit.is_premium,
-                                    premium_expires_at: edit.is_premium ? (fromLocalInput(edit.premium_expires_at || '') || null) : null,
-                                }).eq('id', bot.id)
-                                await supabase.from('bot_configs').update({
-                                    personality_prompt: edit.personality_prompt,
-                                    tone: edit.tone,
-                                    language_mode: edit.language_mode,
-                                    auto_like_rate: edit.auto_like_rate,
-                                    engagement_intensity: edit.engagement_intensity,
-                                    cooldown_hours: edit.cooldown_hours,
-                                    active_hours: normalizeActiveHours(edit.active_hours_raw || ''),
-                                    response_delay_min_s: edit.response_delay_min_s,
-                                    response_delay_max_s: edit.response_delay_max_s,
-                                    allow_initiate: edit.allow_initiate,
-                                    auto_story: edit.auto_story,
-                                    profile_rotation_minutes: edit.profile_rotation_minutes,
-                                    use_global: edit.use_global,
-                                    behavior_settings: {
-                                        ...(bot.bot_configs?.behavior_settings || {}),
-                                        active: edit.active,
-                                        group_id: edit.group_id || null,
+                                await postJson('/api/admin/bots/update', {
+                                    bot_id: bot.id,
+                                    profile: {
+                                        display_name: edit.display_name,
+                                        age: edit.age,
+                                        gender: edit.gender,
+                                        city: edit.city,
+                                        bio: edit.bio,
+                                        photos: (edit.photos || '')
+                                            .split(',')
+                                            .map((p: string) => p.trim())
+                                            .filter(Boolean),
                                     },
-                                }).eq('user_id', bot.id)
+                                    user: {
+                                        coin_balance: Number(edit.coin_balance || 0),
+                                        is_premium: !!edit.is_premium,
+                                        premium_expires_at: edit.is_premium ? (fromLocalInput(edit.premium_expires_at || '') || null) : null,
+                                    },
+                                    config: {
+                                        personality_prompt: edit.personality_prompt,
+                                        tone: edit.tone,
+                                        language_mode: edit.language_mode,
+                                        auto_like_rate: edit.auto_like_rate,
+                                        engagement_intensity: edit.engagement_intensity,
+                                        cooldown_hours: edit.cooldown_hours,
+                                        active_hours: normalizeActiveHours(edit.active_hours_raw || ''),
+                                        response_delay_min_s: edit.response_delay_min_s,
+                                        response_delay_max_s: edit.response_delay_max_s,
+                                        allow_initiate: edit.allow_initiate,
+                                        auto_story: edit.auto_story,
+                                        profile_rotation_minutes: edit.profile_rotation_minutes,
+                                        use_global: edit.use_global,
+                                        behavior_settings: {
+                                            ...(bot.bot_configs?.behavior_settings || {}),
+                                            active: edit.active,
+                                            group_id: edit.group_id || null,
+                                        },
+                                    },
+                                })
                             } finally {
                                 setSaving(false)
                             }

@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
         for (const entry of entries) {
             if (entry.isDirectory) continue
-            const parts = entry.entryName.split('/').filter(Boolean)
+            const parts = entry.entryName.replace(/\\/g, '/').split('/').filter(Boolean)
             if (parts.length < 2) {
                 errors.push(`Skipped (no gender folder): ${entry.entryName}`)
                 continue

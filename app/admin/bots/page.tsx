@@ -1,7 +1,6 @@
 ﻿﻿'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchBots, fetchBotGroups, createBotGroup } from '@/services/botAdminService'
-import { createClient } from '@/lib/supabase/client'
 import Spinner from '@/components/ui/Spinner'
 import { usePresenceStore } from '@/store/usePresenceStore'
 import Image from 'next/image'
@@ -91,6 +90,12 @@ type BotEdit = {
     personality_prompt?: string
 }
 type NameRow = { name: string; gender?: string | null }
+const normalizeGender = (gender?: string | null) => {
+    const g = (gender || '').toLowerCase()
+    if (g.startsWith('f')) return 'female'
+    if (g.startsWith('m')) return 'male'
+    return null
+}
 export default function AdminBotsPage() {
     const [bots, setBots] = useState<BotRow[]>([])
     const [groups, setGroups] = useState<GroupRow[]>([])
@@ -151,6 +156,9 @@ export default function AdminBotsPage() {
     const [nameFemale, setNameFemale] = useState('')
     const [nameMale, setNameMale] = useState('')
     const [nameStatus, setNameStatus] = useState<string | null>(null)
+    const [createPhotoStatus, setCreatePhotoStatus] = useState<string | null>(null)
+    const [createPhotoUploading, setCreatePhotoUploading] = useState(false)
+    const createPhotoInputRef = useRef<HTMLInputElement>(null)
     const totalBots = bots.length
     const activeBots = bots.filter((b) => b.bot_configs?.behavior_settings?.active !== false).length
     const groupCount = groups.length
@@ -195,6 +203,61 @@ export default function AdminBotsPage() {
         .map((v) => v.replace(':00', ''))
         .map((v) => Number(v))
         .filter((v) => !Number.isNaN(v) && v >= 0 && v <= 23)
+    const handlePickPoolPhoto = async () => {
+        setCreatePhotoStatus(null)
+        try {
+            const res = await fetch('/api/admin/bots/pool/random', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gender: normalizeGender(form.gender) }),
+            })
+            if (!res.ok) {
+                setCreatePhotoStatus('Havuzda foto bulunamadı.')
+                return
+            }
+            const data = await res.json()
+            const url = data?.url as string | undefined
+            if (!url) {
+                setCreatePhotoStatus('Havuzdan foto alınamadı.')
+                return
+            }
+            setForm((prev) => ({
+                ...prev,
+                photos: prev.photos ? `${prev.photos}, ${url}` : url,
+            }))
+        } catch {
+            setCreatePhotoStatus('Havuzdan foto alınamadı.')
+        }
+    }
+    const handleUploadCreatePhoto = async (file: File | null) => {
+        if (!file) return
+        setCreatePhotoUploading(true)
+        setCreatePhotoStatus(null)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            const res = await fetch('/api/admin/bots/photo/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            if (!res.ok) {
+                setCreatePhotoStatus('Yükleme başarısız.')
+                return
+            }
+            const data = await res.json()
+            const url = data?.url as string | undefined
+            if (!url) {
+                setCreatePhotoStatus('Foto URL alınamadı.')
+                return
+            }
+            setForm((prev) => ({
+                ...prev,
+                photos: prev.photos ? `${prev.photos}, ${url}` : url,
+            }))
+        } finally {
+            setCreatePhotoUploading(false)
+        }
+    }
     const handleCreate = async () => {
         setCreating(true)
         try {
@@ -372,12 +435,19 @@ export default function AdminBotsPage() {
         for (const id of ids) {
             const bot = bots.find((b) => b.id === id)
             const current = bot?.bot_configs?.behavior_settings || {}
-            await createClient().from('bot_configs').update({
-                behavior_settings: {
-                    ...current,
-                    group_id: bulkGroupId,
-                },
-            }).eq('user_id', id)
+            await fetch('/api/admin/bots/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bot_id: id,
+                    config: {
+                        behavior_settings: {
+                            ...current,
+                            group_id: bulkGroupId,
+                        },
+                    },
+                }),
+            })
         }
         setSelected({})
         await load()
@@ -504,14 +574,49 @@ export default function AdminBotsPage() {
                             className="glass-input w-full px-4 py-2.5 text-sm"
                         />
                     </div>
-                    <div className="space-y-1">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Foto URL (virgül ile)</div>
+                    <div className="space-y-2">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Fotoğraf</div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={handlePickPoolPhoto}
+                                disabled={poolPhotoCount === 0}
+                                className="px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                                Foto Havuzundan Seç
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => createPhotoInputRef.current?.click()}
+                                disabled={createPhotoUploading}
+                                className="px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                                Dosya Seç
+                            </button>
+                            <input
+                                ref={createPhotoInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] || null
+                                    void handleUploadCreatePhoto(file)
+                                    e.currentTarget.value = ''
+                                }}
+                            />
+                        </div>
                         <input
                             value={form.photos}
                             onChange={(e) => setForm({ ...form, photos: e.target.value })}
-                            placeholder="Foto URL (virgül ile)"
+                            placeholder="Seçilen foto URL (virgül ile)"
                             className="glass-input w-full px-4 py-2.5 text-sm"
                         />
+                        {createPhotoStatus && (
+                            <div className="text-xs text-amber-700">{createPhotoStatus}</div>
+                        )}
+                        {poolPhotoCount === 0 && (
+                            <div className="text-xs text-slate-500">Foto havuzu boş. Dosya yükleyebilirsin.</div>
+                        )}
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -951,13 +1056,15 @@ export default function AdminBotsPage() {
     )
 }
 function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolean; onSelect: (v: boolean) => void }) {
-    const supabase = useMemo(() => createClient(), [])
     const [stats, setStats] = useState<{ likes: number; matches: number; messages: number } | null>(null)
     const [loading, setLoading] = useState(false)
     const [expanded, setExpanded] = useState(false)
     const [saving, setSaving] = useState(false)
     const [now, setNow] = useState(() => Date.now())
     const onlineUsers = usePresenceStore((s) => s.onlineUsers)
+    const [editPhotoStatus, setEditPhotoStatus] = useState<string | null>(null)
+    const [editPhotoUploading, setEditPhotoUploading] = useState(false)
+    const editPhotoInputRef = useRef<HTMLInputElement>(null)
     const [edit, setEdit] = useState<BotEdit>(() => ({
         display_name: bot.profiles?.display_name || '',
         age: bot.profiles?.age || 0,
@@ -1001,36 +1108,93 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
         if (Number.isNaN(d.getTime())) return null
         return d.toISOString()
     }
+    const handlePickEditPoolPhoto = async () => {
+        setEditPhotoStatus(null)
+        try {
+            const res = await fetch('/api/admin/bots/pool/random', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gender: normalizeGender(edit.gender) }),
+            })
+            if (!res.ok) {
+                setEditPhotoStatus('Havuzda foto bulunamadı.')
+                return
+            }
+            const data = await res.json()
+            const url = data?.url as string | undefined
+            if (!url) {
+                setEditPhotoStatus('Havuzdan foto alınamadı.')
+                return
+            }
+            setEdit((prev) => ({
+                ...prev,
+                photos: prev.photos ? `${prev.photos}, ${url}` : url,
+            }))
+        } catch {
+            setEditPhotoStatus('Havuzdan foto alınamadı.')
+        }
+    }
+    const handleUploadEditPhoto = async (file: File | null) => {
+        if (!file) return
+        setEditPhotoUploading(true)
+        setEditPhotoStatus(null)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            const res = await fetch('/api/admin/bots/photo/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            if (!res.ok) {
+                setEditPhotoStatus('Yükleme başarısız.')
+                return
+            }
+            const data = await res.json()
+            const url = data?.url as string | undefined
+            if (!url) {
+                setEditPhotoStatus('Foto URL alınamadı.')
+                return
+            }
+            setEdit((prev) => ({
+                ...prev,
+                photos: prev.photos ? `${prev.photos}, ${url}` : url,
+            }))
+        } finally {
+            setEditPhotoUploading(false)
+        }
+    }
     const loadStats = async () => {
         setLoading(true)
-        const likes = await supabase
-            .from('likes')
-            .select('id', { count: 'exact', head: true })
-            .eq('from_user', bot.id)
-        const matches = await supabase
-            .from('matches')
-            .select('id', { count: 'exact', head: true })
-            .or(`user_a.eq.${bot.id},user_b.eq.${bot.id}`)
-        const messages = await supabase
-            .from('messages')
-            .select('id', { count: 'exact', head: true })
-            .eq('sender_id', bot.id)
-        setStats({
-            likes: likes.count || 0,
-            matches: matches.count || 0,
-            messages: messages.count || 0,
+        const res = await fetch('/api/admin/bots/stats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: bot.id }),
         })
+        if (res.ok) {
+            const payload = await res.json()
+            setStats({
+                likes: payload.likes || 0,
+                matches: payload.matches || 0,
+                messages: payload.messages || 0,
+            })
+        }
         setLoading(false)
     }
     const toggleActive = async () => {
         const current = bot.bot_configs?.behavior_settings?.active !== false
         const next = !current
-        await supabase.from('bot_configs').update({
-            behavior_settings: {
-                ...(bot.bot_configs?.behavior_settings || {}),
-                active: next,
+        const res = await fetch('/api/admin/bots/toggle-active', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: bot.id, active: next, behavior_settings: bot.bot_configs?.behavior_settings || {} }),
+        })
+        if (res.ok) {
+            const payload = await res.json()
+            if (bot.bot_configs) {
+                if (!bot.bot_configs.behavior_settings) bot.bot_configs.behavior_settings = {}
+                bot.bot_configs.behavior_settings = payload.behavior_settings || { ...(bot.bot_configs.behavior_settings || {}), active: next }
             }
-        }).eq('user_id', bot.id)
+        }
         if (bot.bot_configs) {
             if (!bot.bot_configs.behavior_settings) bot.bot_configs.behavior_settings = {}
             bot.bot_configs.behavior_settings.active = next
@@ -1038,7 +1202,11 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
     }
     const toggleUseGlobal = async () => {
         const next = !(bot.bot_configs?.use_global !== false)
-        await supabase.from('bot_configs').update({ use_global: next }).eq('user_id', bot.id)
+        await fetch('/api/admin/bots/toggle-global', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: bot.id, use_global: next }),
+        })
         if (bot.bot_configs) bot.bot_configs.use_global = next
     }
     const normalizeActiveHours = (raw: string) => {
@@ -1152,14 +1320,45 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
                                 className="glass-input w-full px-4 py-2.5 text-sm"
                             />
                         </div>
-                        <div className="space-y-1 md:col-span-2">
-                            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Foto URL (virgül ile)</div>
+                        <div className="space-y-2 md:col-span-2">
+                            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Fotoğraf</div>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handlePickEditPoolPhoto}
+                                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50"
+                                >
+                                    Foto Havuzundan Seç
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => editPhotoInputRef.current?.click()}
+                                    disabled={editPhotoUploading}
+                                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                    Dosya Seç
+                                </button>
+                                <input
+                                    ref={editPhotoInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] || null
+                                        void handleUploadEditPhoto(file)
+                                        e.currentTarget.value = ''
+                                    }}
+                                />
+                            </div>
                             <input
                                 value={edit.photos}
                                 onChange={(e) => setEdit((prev) => ({ ...prev, photos: e.target.value }))}
-                                placeholder="Foto URL (virgül ile)"
+                                placeholder="Seçilen foto URL (virgül ile)"
                                 className="glass-input w-full px-4 py-2.5 text-sm"
                             />
+                            {editPhotoStatus && (
+                                <div className="text-xs text-amber-700">{editPhotoStatus}</div>
+                            )}
                         </div>
                         <div className="space-y-1 md:col-span-2">
                             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Biyografi</div>
@@ -1358,44 +1557,51 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
                         onClick={async () => {
                             setSaving(true)
                             try {
-                                await supabase.from('profiles').update({
-                                    display_name: edit.display_name,
-                                    age: edit.age,
-                                    gender: edit.gender,
-                                    city: edit.city,
-                                    bio: edit.bio,
-                                    photos: edit.photos
-                                        ? edit.photos
-                                            .split(',')
-                                            .map((p: string) => p.trim())
-                                            .filter(Boolean)
-                                        : [],
-                                }).eq('id', bot.id)
-                                await supabase.from('users').update({
-                                    coin_balance: Number(edit.coin_balance || 0),
-                                    is_premium: !!edit.is_premium,
-                                    premium_expires_at: edit.is_premium && edit.premium_expires_at ? (fromLocalInput(edit.premium_expires_at) || null) : null,
-                                }).eq('id', bot.id)
-                                await supabase.from('bot_configs').update({
-                                    personality_prompt: edit.personality_prompt,
-                                    tone: edit.tone,
-                                    language_mode: edit.language_mode,
-                                    auto_like_rate: edit.auto_like_rate,
-                                    engagement_intensity: edit.engagement_intensity,
-                                    cooldown_hours: edit.cooldown_hours,
-                                    active_hours: normalizeActiveHours(edit.active_hours_raw || ''),
-                                    response_delay_min_s: edit.response_delay_min_s,
-                                    response_delay_max_s: edit.response_delay_max_s,
-                                    allow_initiate: edit.allow_initiate,
-                                    auto_story: edit.auto_story,
-                                    profile_rotation_minutes: edit.profile_rotation_minutes,
-                                    use_global: edit.use_global,
-                                    behavior_settings: {
-                                        ...(bot.bot_configs?.behavior_settings || {}),
-                                        active: edit.active,
-                                        group_id: edit.group_id || null,
-                                    },
-                                }).eq('user_id', bot.id)
+                                await fetch('/api/admin/bots/update', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        bot_id: bot.id,
+                                        profile: {
+                                            display_name: edit.display_name,
+                                            age: edit.age,
+                                            gender: edit.gender,
+                                            city: edit.city,
+                                            bio: edit.bio,
+                                            photos: edit.photos
+                                                ? edit.photos
+                                                    .split(',')
+                                                    .map((p: string) => p.trim())
+                                                    .filter(Boolean)
+                                                : [],
+                                        },
+                                        user: {
+                                            coin_balance: Number(edit.coin_balance || 0),
+                                            is_premium: !!edit.is_premium,
+                                            premium_expires_at: edit.is_premium && edit.premium_expires_at ? (fromLocalInput(edit.premium_expires_at) || null) : null,
+                                        },
+                                        config: {
+                                            personality_prompt: edit.personality_prompt,
+                                            tone: edit.tone,
+                                            language_mode: edit.language_mode,
+                                            auto_like_rate: edit.auto_like_rate,
+                                            engagement_intensity: edit.engagement_intensity,
+                                            cooldown_hours: edit.cooldown_hours,
+                                            active_hours: normalizeActiveHours(edit.active_hours_raw || ''),
+                                            response_delay_min_s: edit.response_delay_min_s,
+                                            response_delay_max_s: edit.response_delay_max_s,
+                                            allow_initiate: edit.allow_initiate,
+                                            auto_story: edit.auto_story,
+                                            profile_rotation_minutes: edit.profile_rotation_minutes,
+                                            use_global: edit.use_global,
+                                            behavior_settings: {
+                                                ...(bot.bot_configs?.behavior_settings || {}),
+                                                active: edit.active,
+                                                group_id: edit.group_id || null,
+                                            },
+                                        },
+                                    }),
+                                })
                             } finally {
                                 setSaving(false)
                             }

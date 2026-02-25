@@ -1,0 +1,261 @@
+            <div className="p-3 sm:p-4 bg-[var(--background)]/80 backdrop-blur-xl border-t border-[var(--foreground)]/5 safe-area-bottom transition-colors md:sticky md:bottom-0 md:z-30">
+                {messages.length === 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2 items-center max-w-4xl mx-auto">
+                        {introSuggestions.length === 0 ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={loadIntroSuggestions}
+                                disabled={introLoading}
+                                className="rounded-full text-xs px-4 border border-[var(--foreground)]/10"
+                            >
+                                {introLoading ? 'Öneriler hazırlanıyor...' : 'Akıllı giriş önerileri'}
+                            </Button>
+                        ) : (
+                            introSuggestions.map((text) => (
+                                <Button
+                                    key={text}
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setInput(text)}
+                                    className="text-xs border border-[var(--foreground)]/10"
+                                >
+                                    {text}
+                                </Button>
+                            ))
+                        )}
+                    </div>
+                )}
+                
+                {showGifts && (
+                    <div className="max-w-4xl mx-auto w-full mb-2 rounded-2xl border border-[var(--foreground)]/10 bg-[var(--foreground)]/5 p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="font-semibold text-sm">Hediye gönder</div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setShowGifts(false)}
+                                className="h-auto px-0 text-xs opacity-60 hover:opacity-100"
+                            >
+                                Kapat
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {giftList.map((g) => (
+                                <Button
+                                    key={g.id}
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => handleSendGift(g.id)}
+                                    disabled={sendingGift}
+                                    className="w-full bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-xl p-3 text-left hover:bg-[var(--foreground)]/10"
+                                >
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[var(--foreground)]/5">
+                                            <Image
+                                                src={getGiftStickerUrl(g.name) || g.image_url || ''}
+                                                alt={g.name}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-semibold">{g.name}</div>
+                                            <div className="text-xs opacity-60">{g.price} jeton</div>
+                                        </div>
+                                    </div>
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <form onSubmit={handleSend} className="flex gap-2 items-center max-w-4xl mx-auto w-full relative px-1">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handleImageUpload(file)
+                            e.currentTarget.value = ''
+                        }}
+                    />
+                    <div className="flex items-center gap-1 shrink-0 bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-full p-1 shadow-sm">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="rounded-full text-[var(--foreground)]/60 hover:text-pink-500 hover:bg-pink-500/10 h-10 w-10 sm:h-11 sm:w-11"
+                            disabled={uploadingImage}
+                        >
+                            <ImageIcon size={20} />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => (recording ? stopRecording() : startRecording())}
+                            className={`rounded-full transition-colors h-10 w-10 sm:h-11 sm:w-11 ${recording ? 'text-red-500 bg-red-500/10' : 'text-[var(--foreground)]/60 hover:text-pink-500'}`}
+                        >
+                            <Mic size={20} />
+                        </Button>
+                    </div>
+
+                    <div className="relative flex-1 flex items-center bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-3xl shadow-sm min-h-[44px] sm:min-h-[48px]">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setStickersOpen(true)}
+                            className="shrink-0 ml-1 rounded-full text-[var(--foreground)]/50 hover:text-pink-500 h-9 w-9"
+                        >
+                            <Smile size={20} />
+                        </Button>
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => {
+                                setInput(e.target.value)
+                                handleTyping()
+                            }}
+                            placeholder={messages.length === 0 && !canChatFree ? 'Merhaba de (20 jeton)...' : 'Mesaj yaz...'}
+                            className="flex-1 bg-transparent border-none focus:ring-0 px-2 py-2 text-sm sm:text-base text-[var(--foreground)] placeholder:text-[var(--foreground)]/50 outline-none"
+                        />
+                        <div className="shrink-0 mr-1">
+                            <Button
+                                type="submit"
+                                disabled={!input.trim() || isSending}
+                                className={`rounded-full h-9 w-9 transition-all ${
+                                    (!input.trim() || isSending) 
+                                    ? 'bg-[var(--foreground)]/10 text-[var(--foreground)]/40' 
+                                    : 'bg-gradient-to-tr from-pink-500 to-violet-500 text-white shadow-md'
+                                }`}
+                                size="icon"
+                            >
+                                {isSending ? <Spinner className="w-4 h-4" /> : <Send size={16} className="translate-x-0.5" />}
+                            </Button>
+                        </div>
+                    </div>
+                </form>
+                {!canReadReceiptsFree && !canSeeReadReceipts && !premiumReadReceipts && (
+                    <div className="mt-2 text-[10px] text-[var(--foreground)]/40 text-center">Okundu bilgisi bu özellik için kapalı.</div>
+                )}
+            </div>
+
+            {showPremiumModal && <PremiumModal onClose={() => setShowPremiumModal(false)} />}
+            <GiftBurst
+                open={giftBurstOpen}
+                imageUrl={giftBurstUrl}
+                onDone={() => setGiftBurstOpen(false)}
+            />
+            <ConfirmDialog
+                open={confirmOpen}
+                title={confirmTitle}
+                description={confirmMessage}
+                confirmText={confirmText}
+                cancelText={confirmCancelText}
+                variant={confirmVariant}
+                onClose={() => {
+                    setConfirmOpen(false)
+                    setConfirmAction(null)
+                }}
+                onConfirm={async () => {
+                    setConfirmOpen(false)
+                    const action = confirmAction
+                    setConfirmAction(null)
+                    if (action) await action()
+                }}
+            />
+            <ConfirmDialog
+                open={unsendOpen}
+                title="Gönderimi geri al"
+                description="Bu mesajı geri almak istediğine emin misin?"
+                confirmText={unsending ? 'Geri alınıyor...' : 'Geri al'}
+                cancelText="Vazgeç"
+                variant="danger"
+                onClose={() => {
+                    if (unsending) return
+                    setUnsendOpen(false)
+                    setUnsendTarget(null)
+                }}
+                onConfirm={handleConfirmUnsend}
+            />
+            <InputDialog
+                open={reportOpen}
+                title="Mesajı raporla"
+                description="Bu mesajı raporlama nedeninizi belirtin."
+                placeholder="Raporlama nedeni..."
+                confirmText={reporting ? 'Gönderiliyor...' : 'Raporla'}
+                cancelText="İptal"
+                required
+                onClose={() => {
+                    if (reporting) return
+                    setReportOpen(false)
+                    setReportTarget(null)
+                }}
+                onConfirm={handleConfirmReport}
+            />
+
+            {stickersOpen && (
+                <div className="fixed inset-0 z-[70] bg-black/60 flex items-end md:items-center justify-center p-4">
+                    <div className="bg-[#0b0f14] border border-white/10 rounded-2xl w-full max-w-md p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="font-semibold">Sticker gönder</div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setStickersOpen(false)}
+                                className="h-auto px-0 text-xs text-gray-400 hover:text-[var(--foreground)]"
+                            >
+                                Kapat
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto p-1">
+                            {displayStickers.map((s) => (
+                                <Button
+                                    key={s.id}
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={async () => {
+                                        if (!user) return
+                                        const inserted = await sendStickerMessage(matchId, user.id, s.id, s.image_url)
+                                        if (inserted) appendMessage(inserted as Message)
+                                        setStickersOpen(false)
+                                    }}
+                                    className="w-full bg-white/5 rounded-xl p-3 hover:bg-white/10"
+                                >
+                                    <div className="relative w-14 h-14 rounded-xl overflow-hidden">
+                                        <Image src={s.image_url || ''} alt={s.name} fill className="object-cover" />
+                                    </div>
+                                </Button>
+                            ))}
+                            {displayStickers.length === 0 && (
+                                <div className="text-xs text-gray-400 col-span-3">Sticker bulunamadı.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {activeCall && otherUser && (
+                <AgoraCallOverlay 
+                    callSession={activeCall}
+                    otherUser={otherUser}
+                    onEnd={async () => {
+                        try {
+                            await respondCall(activeCall.id, 'end')
+                            setActiveCall(null)
+                        } catch (err) {
+                            console.error(err)
+                            setActiveCall(null)
+                        }
+                    }}
+                />
+            )}
+        </div>
+    )
+}

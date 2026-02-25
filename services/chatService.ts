@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/lib/database.types'
+import type { LastActiveVisibility } from '@/utils/lastActive'
 
 export type Message = Database['public']['Tables']['messages']['Row']
 export type Match = Database['public']['Tables']['matches']['Row'] & {
@@ -13,6 +14,11 @@ export type Match = Database['public']['Tables']['matches']['Row'] & {
         last_message_at?: string | null
         last_message_preview?: string | null
     } | null
+}
+
+type ProfileLite = Database['public']['Tables']['profiles']['Row'] & {
+    users?: Array<{ last_active_at?: string | null }>
+    last_active_visibility?: LastActiveVisibility | null
 }
 
 const supabase = createClient()
@@ -47,7 +53,45 @@ export const fetchMatches = async (userId: string) => {
     if (profileError) throw profileError
 
     // 4. Map profiles back to matches
-    const profileMap = new Map(profiles?.map(p => [p.id, p]))
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p as ProfileLite]))
+
+    const { data: settings } = await supabase
+        .from('user_settings')
+        .select('user_id,last_active_visibility')
+        .in('user_id', otherUserIds)
+    const visibilityMap = new Map((settings || []).map((s: { user_id: string; last_active_visibility: LastActiveVisibility }) => [s.user_id, s.last_active_visibility]))
+    for (const [id, profile] of profileMap.entries()) {
+        if (profile) {
+            profile.last_active_visibility = visibilityMap.get(id) ?? null
+        }
+    }
+    if (otherUserIds.length > 0) {
+        try {
+            const { data: session } = await supabase.auth.getSession()
+            const token = session.session?.access_token
+            if (token) {
+                const res = await fetch('/api/profile/visibility', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ userIds: otherUserIds }),
+                })
+                if (res.ok) {
+                    const payload = await res.json()
+                    const visibilities = (payload?.visibilities || {}) as Record<string, LastActiveVisibility>
+                    for (const [id, profile] of profileMap.entries()) {
+                        if (profile) {
+                            profile.last_active_visibility = visibilities[id] ?? profile.last_active_visibility ?? null
+                        }
+                    }
+                }
+            }
+        } catch {
+            // Non-blocking
+        }
+    }
 
     // 5. Fetch chat states for current user
     const matchIds = matches.map((m) => m.id)

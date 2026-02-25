@@ -258,8 +258,8 @@ export default function LikedYouPage() {
         const profile = r.profile
         const photoUrl = getProfileAvatar(profile)
         const card = (
-            <div className="glass-panel rounded-[28px] border border-white/10 p-4 text-center transition hover:border-white/20 hover:bg-white/[0.08]">
-                <div className={`relative mx-auto h-24 w-24 overflow-hidden rounded-full border border-white/15 ${reveal ? '' : 'opacity-70'}`}>
+            <div className="bg-surface-1 rounded-[var(--radius-xl)] border border-surface-2 p-4 text-center transition hover:border-brand-primary/40 hover:bg-surface-2 shadow-[var(--shadow-sm)]">
+                <div className={`relative mx-auto h-24 w-24 overflow-hidden rounded-full border border-surface-2 ${reveal ? '' : 'opacity-70'}`}>
                     <Image
                         src={photoUrl}
                         alt={profile?.display_name || 'Kullanıcı'}
@@ -267,18 +267,18 @@ export default function LikedYouPage() {
                         className={`object-cover ${reveal ? '' : 'blur-md scale-110'}`}
                     />
                     {!reveal && (
-                        <div className="absolute inset-0 bg-black/30" />
+                        <div className="absolute inset-0 bg-surface-0/40 backdrop-blur-sm" />
                     )}
                 </div>
                 <div className="mt-3 min-w-0 space-y-1">
-                    <div className="truncate text-sm font-semibold">
+                    <div className="truncate text-sm font-semibold text-text-primary">
                         {reveal ? profile?.display_name || 'Kullanıcı' : 'Gizli Kullanıcı'}
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-text-secondary">
                         {reveal ? `${profile?.age || '—'} • ${profile?.city || '—'}` : 'Detaylar gizli'}
                     </div>
                     {r.isMatch && (
-                        <div className="mx-auto mt-1 w-fit rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
+                        <div className="mx-auto mt-1 w-fit rounded-full border border-status-success/30 bg-status-success/10 px-2 py-0.5 text-[10px] text-status-success">
                             Eşleşme
                         </div>
                     )}
@@ -301,22 +301,22 @@ export default function LikedYouPage() {
     return (
         <div className="space-y-6 pb-8">
             {unlockActive && unlockExpiresAt && (
-                <div className="text-xs text-emerald-300">
+                <div className="text-xs text-status-success">
                     Erişim açık: {new Date(unlockExpiresAt).toLocaleString()} tarihine kadar
                 </div>
             )}
             {error && (
-                <div className="p-3 text-sm text-red-200 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div className="p-3 text-sm text-status-destructive bg-status-destructive/10 border border-status-destructive/20 rounded-[var(--radius-md)]">
                     {error}
                 </div>
             )}
             {!canAccess && !unlockActive && (
-                <div className="glass-panel p-5 rounded-2xl space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-yellow-300">
+                <div className="bg-surface-1 border border-surface-2 p-5 rounded-[var(--radius-xl)] space-y-3 shadow-[var(--shadow-sm)]">
+                    <div className="flex items-center gap-2 text-sm text-brand-accent">
                         <Star size={16} />
                         Bu özellik kapalı. Eşleşmen varsa açık görünür.
                     </div>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-text-secondary">
                         Diğer beğenenler saydam görünür. Jetonla açabilir veya premium&apos;a geçebilirsin.
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -331,10 +331,10 @@ export default function LikedYouPage() {
                                 {unlocking ? 'Açılıyor...' : `${plan.hours} saat aç (${plan.cost} jeton)`}
                             </Button>
                         ) : (
-                            <div className="text-xs text-gray-500">Jetonla açma planı aktif değil.</div>
+                            <div className="text-xs text-text-disabled">Jetonla açma planı aktif değil.</div>
                         )}
                         {premiumHas && (
-                            <Link href="/store/premium" className="px-4 py-2 rounded-full bg-pink-500 text-white text-sm">
+                            <Link href="/store/premium" className="px-4 py-2 rounded-[var(--radius-full)] bg-brand-primary text-text-primary text-sm font-semibold hover:opacity-90 transition-opacity">
                                 Premium&apos;a Geç
                             </Link>
                         )}
@@ -346,7 +346,7 @@ export default function LikedYouPage() {
                     <button
                         key={key}
                         onClick={() => setTab(key)}
-                        className={`px-3 py-1.5 rounded-full border ${tab === key ? 'bg-pink-500/20 text-pink-200 border-pink-500/40' : 'bg-white/5 text-gray-300 border-white/10'}`}
+                        className={`px-3 py-1.5 rounded-[var(--radius-full)] border transition-colors ${tab === key ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/50' : 'bg-surface-2 text-text-secondary border-transparent hover:text-text-primary'}`}
                     >
                         {key === 'matches' ? 'Eşleşmeler' : key === 'likes' ? 'Beğenenler' : 'Favoriler'}
                     </button>
@@ -354,62 +354,62 @@ export default function LikedYouPage() {
             </div>
             {tab === 'matches' && (
                 <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Eşleşmeler</h2>
-                    <span className="text-xs text-gray-400">{matches.length}</span>
-                </div>
-                {matches.length === 0 && (
-                    <div className="glass-panel p-4 rounded-2xl text-sm text-gray-400">
-                        Henüz eşleşme yok.
-                        <div className="mt-3">
-                            <Link href="/swipe" className="inline-flex px-3 py-1.5 rounded-full bg-pink-500 text-white text-xs">
-                                Keşfetmeye başla
-                            </Link>
-                        </div>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-text-primary">Eşleşmeler</h2>
+                        <span className="text-xs text-text-secondary">{matches.length}</span>
                     </div>
-                )}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {matches.map((r) => renderCard(r))}
-                </div>
-            </section>
+                    {matches.length === 0 && (
+                        <div className="bg-surface-1 border border-surface-2 p-6 rounded-[var(--radius-xl)] text-center text-sm text-text-secondary shadow-[var(--shadow-sm)]">
+                            Henüz eşleşme yok.
+                            <div className="mt-4">
+                                <Link href="/swipe" className="inline-flex px-4 py-2 rounded-[var(--radius-full)] bg-brand-primary text-text-primary font-semibold text-xs hover:opacity-90 transition-opacity">
+                                    Keşfetmeye başla
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                        {matches.map((r) => renderCard(r))}
+                    </div>
+                </section>
             )}
             {tab === 'likes' && (
                 <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Beğenenler</h2>
-                    <span className="text-xs text-gray-400">{likes.length}</span>
-                </div>
-                {likes.length === 0 && (
-                    <div className="glass-panel p-8 rounded-2xl text-center space-y-3">
-                        <div className="text-5xl">💫</div>
-                        <h3 className="text-lg font-semibold">Henüz kimse beğenmemiş</h3>
-                        <p className="text-sm text-gray-400">
-                            Profilini tamamla ve aktif ol. Yakında beğeniler gelmeye başlayacak!
-                        </p>
-                        <Link href="/swipe" className="inline-flex px-4 py-2 rounded-full bg-white/10 text-xs text-gray-200">
-                            Keşfetmeye başla
-                        </Link>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-text-primary">Beğenenler</h2>
+                        <span className="text-xs text-text-secondary">{likes.length}</span>
                     </div>
-                )}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {likes.map((r) => renderCard(r))}
-                </div>
-            </section>
+                    {likes.length === 0 && (
+                        <div className="bg-surface-1 border border-surface-2 p-8 rounded-[var(--radius-xl)] text-center space-y-3 shadow-[var(--shadow-sm)]">
+                            <div className="text-5xl">💫</div>
+                            <h3 className="text-lg font-semibold text-text-primary">Henüz kimse beğenmemiş</h3>
+                            <p className="text-sm text-text-secondary">
+                                Profilini tamamla ve aktif ol. Yakında beğeniler gelmeye başlayacak!
+                            </p>
+                            <Link href="/swipe" className="inline-flex px-4 py-2 rounded-[var(--radius-full)] bg-surface-2 text-xs text-text-primary hover:bg-surface-3 transition-colors border border-surface-2 hover:border-surface-3 font-medium">
+                                Keşfetmeye başla
+                            </Link>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                        {likes.map((r) => renderCard(r))}
+                    </div>
+                </section>
             )}
             {tab === 'favorites' && (
                 <section className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Favoriler</h2>
-                        <span className="text-xs text-gray-400">{favorites.length}</span>
+                        <h2 className="text-lg font-semibold text-text-primary">Favoriler</h2>
+                        <span className="text-xs text-text-secondary">{favorites.length}</span>
                     </div>
                     {favorites.length === 0 && (
-                        <div className="glass-panel p-8 rounded-2xl text-center space-y-3">
+                        <div className="bg-surface-1 border border-surface-2 p-8 rounded-[var(--radius-xl)] text-center space-y-3 shadow-[var(--shadow-sm)]">
                             <div className="text-5xl">⭐</div>
-                            <h3 className="text-lg font-semibold">Favorin yok</h3>
-                            <p className="text-sm text-gray-400">
+                            <h3 className="text-lg font-semibold text-text-primary">Favorin yok</h3>
+                            <p className="text-sm text-text-secondary">
                                 Beğendiklerini favorilere ekleyerek daha sonra hızlıca bulabilirsin.
                             </p>
-                            <Link href="/swipe" className="inline-flex px-4 py-2 rounded-full bg-white/10 text-xs text-gray-200">
+                            <Link href="/swipe" className="inline-flex px-4 py-2 rounded-[var(--radius-full)] bg-surface-2 text-xs text-text-primary hover:bg-surface-3 transition-colors border border-surface-2 hover:border-surface-3 font-medium">
                                 Keşfetmeye başla
                             </Link>
                         </div>

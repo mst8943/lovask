@@ -40,6 +40,13 @@ export async function POST(req: Request) {
             is_bot: true,
         })
 
+        await admin.from('user_settings').upsert({
+            user_id: userId,
+            last_active_visibility: 'matches',
+            message_request_mode: 'open',
+            harassment_mode: false,
+        }, { onConflict: 'user_id' })
+
         await admin.from('bot_configs').insert({
             user_id: userId,
             personality_prompt: payload.prompt || '',

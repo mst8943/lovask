@@ -3,12 +3,10 @@
 import { useT } from '@/hooks/useT'
 import LanguageSelect from '@/components/i18n/LanguageSelect'
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_FEATURES, FEATURE_ITEMS, FeatureConfig } from '@/lib/featureFlags'
 
 export default function AdminSettingsPage() {
     const t = useT()
-    const supabase = createClient()
     const [features, setFeatures] = useState<FeatureConfig>(DEFAULT_FEATURES)
     const [rollouts, setRollouts] = useState<{ premium: Record<string, number>; standard: Record<string, number> }>({ premium: {}, standard: {} })
     const [saving, setSaving] = useState(false)
@@ -22,62 +20,60 @@ export default function AdminSettingsPage() {
         iban: '',
         account_no: '',
     })
+    const [openrouterSettings, setOpenrouterSettings] = useState({
+        api_key: '',
+        model: '',
+        base_url: '',
+    })
     const [slaSettings, setSlaSettings] = useState<Record<string, number>>({})
 
     useEffect(() => {
         const load = async () => {
             setLoading(true)
             setError(null)
-            const { data, error } = await supabase
-                .from('app_settings')
-                .select('value')
-                .eq('key', 'feature_flags')
-                .maybeSingle()
-            if (error) {
-                setError(error.message)
+            const res = await fetch('/api/admin/settings')
+            if (!res.ok) {
+                setError(await res.text())
                 setLoading(false)
                 return
             }
-            if (data?.value) {
+            const payload = await res.json()
+            if (payload?.feature_flags) {
                 setFeatures({
-                    premium: { ...DEFAULT_FEATURES.premium, ...(data.value.premium || {}) },
-                    standard: { ...DEFAULT_FEATURES.standard, ...(data.value.standard || {}) },
+                    premium: { ...DEFAULT_FEATURES.premium, ...(payload.feature_flags.premium || {}) },
+                    standard: { ...DEFAULT_FEATURES.standard, ...(payload.feature_flags.standard || {}) },
                 })
             }
-            const { data: rollout } = await supabase
-                .from('app_settings')
-                .select('value')
-                .eq('key', 'feature_rollout')
-                .maybeSingle()
-            if (rollout?.value) {
+            if (payload?.feature_rollout) {
                 setRollouts({
-                    premium: rollout.value.premium || {},
-                    standard: rollout.value.standard || {},
+                    premium: payload.feature_rollout.premium || {},
+                    standard: payload.feature_rollout.standard || {},
                 })
             }
-            const { data: payment } = await supabase
-                .from('app_settings')
-                .select('value')
-                .eq('key', 'payment_settings')
-                .maybeSingle()
-            if (payment?.value) {
+            if (payload?.payment_settings) {
                 setPaymentSettings({
-                    provider: payment.value.provider || 'bank_transfer',
-                    card_enabled: !!payment.value.card_enabled,
-                    bank_name: payment.value.bank_name || '',
-                    account_name: payment.value.account_name || '',
-                    iban: payment.value.iban || '',
-                    account_no: payment.value.account_no || '',
+                    provider: payload.payment_settings.provider || 'bank_transfer',
+                    card_enabled: !!payload.payment_settings.card_enabled,
+                    bank_name: payload.payment_settings.bank_name || '',
+                    account_name: payload.payment_settings.account_name || '',
+                    iban: payload.payment_settings.iban || '',
+                    account_no: payload.payment_settings.account_no || '',
                 })
             }
-            const { data: sla } = await supabase.from('admin_sla_settings').select('queue,sla_hours')
-            if (sla) {
-                setSlaSettings(Object.fromEntries(sla.map((row: { queue: string; sla_hours: number }) => [row.queue, row.sla_hours])))
+            if (payload?.openrouter_settings) {
+                setOpenrouterSettings({
+                    api_key: payload.openrouter_settings.api_key || '',
+                    model: payload.openrouter_settings.model || '',
+                    base_url: payload.openrouter_settings.base_url || '',
+                })
+            }
+            if (payload?.sla_settings) {
+                setSlaSettings(Object.fromEntries(payload.sla_settings.map((row: { queue: string; sla_hours: number }) => [row.queue, row.sla_hours])))
             }
             setLoading(false)
         }
         load()
-    }, [supabase])
+    }, [])
 
     const toggle = (tier: 'premium' | 'standard', key: string) => {
         setFeatures((prev) => ({
@@ -89,23 +85,18 @@ export default function AdminSettingsPage() {
     const save = async () => {
         setSaving(true)
         setError(null)
-        const { error } = await supabase
-            .from('app_settings')
-            .upsert({ key: 'feature_flags', value: features }, { onConflict: 'key' })
-        if (error) setError(error.message)
-        const { error: rolloutError } = await supabase
-            .from('app_settings')
-            .upsert({ key: 'feature_rollout', value: rollouts }, { onConflict: 'key' })
-        if (rolloutError) setError(rolloutError.message)
-        const { error: paymentError } = await supabase
-            .from('app_settings')
-            .upsert({ key: 'payment_settings', value: paymentSettings }, { onConflict: 'key' })
-        if (paymentError) setError(paymentError.message)
-        await Promise.all(
-            Object.entries(slaSettings).map(([queue, sla_hours]) =>
-                supabase.from('admin_sla_settings').upsert({ queue, sla_hours }, { onConflict: 'queue' })
-            )
-        )
+        const res = await fetch('/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                feature_flags: features,
+                feature_rollout: rollouts,
+                payment_settings: paymentSettings,
+                openrouter_settings: openrouterSettings,
+                sla_settings: Object.entries(slaSettings).map(([queue, sla_hours]) => ({ queue, sla_hours })),
+            }),
+        })
+        if (!res.ok) setError(await res.text())
         setSaving(false)
     }
 
@@ -308,6 +299,44 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+
+            <div className="glass-panel p-6 rounded-2xl space-y-4 border border-slate-200">
+                <div>
+                    <div className="text-sm font-semibold">AI Ayarlari (OpenRouter)</div>
+                    <div className="text-xs text-slate-500">Bot cevaplari icin API bilgileri</div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                        <div className="text-sm text-slate-600">API Anahtari</div>
+                        <input
+                            type="password"
+                            value={openrouterSettings.api_key}
+                            onChange={(e) => setOpenrouterSettings((prev) => ({ ...prev, api_key: e.target.value }))}
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2"
+                            placeholder="or-..."
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <div className="text-sm text-slate-600">Model</div>
+                        <input
+                            value={openrouterSettings.model}
+                            onChange={(e) => setOpenrouterSettings((prev) => ({ ...prev, model: e.target.value }))}
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2"
+                            placeholder="openai/gpt-4o-mini"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <div className="text-sm text-slate-600">Base URL</div>
+                        <input
+                            value={openrouterSettings.base_url}
+                            onChange={(e) => setOpenrouterSettings((prev) => ({ ...prev, base_url: e.target.value }))}
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2"
+                            placeholder="https://openrouter.ai/api/v1/chat/completions"
+                        />
+                    </div>
+                </div>
+            </div>
+
         </div>
     )
 }

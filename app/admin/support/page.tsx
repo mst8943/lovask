@@ -1,7 +1,6 @@
 ﻿'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fetchSupportTickets, updateSupportTicket, SupportTicket } from '@/services/supportService'
-import { createClient } from '@/lib/supabase/client'
+import { SupportTicket } from '@/services/supportService'
 import Spinner from '@/components/ui/Spinner'
 const statusOptions: SupportTicket['status'][] = ['open', 'pending', 'resolved', 'closed']
 const SLA_HOURS = 6
@@ -28,7 +27,6 @@ const formatRemaining = (createdAt: string, slaHours: number) => {
     return `${hours}s ${minutes}d`
 }
 export default function AdminSupportPage() {
-    const supabase = useMemo(() => createClient(), [])
     const [loading, setLoading] = useState(true)
     const [rows, setRows] = useState<SupportTicket[]>([])
     const [notes, setNotes] = useState<Record<string, string>>({})
@@ -45,12 +43,21 @@ export default function AdminSupportPage() {
     const [threads, setThreads] = useState<Record<string, Array<{ id: string; sender_role: string; body: string; created_at: string }>>>({})
     const [replyMap, setReplyMap] = useState<Record<string, string>>({})
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+    const postJson = useCallback(async (url: string, body?: Record<string, unknown>) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        return res.json()
+    }, [])
     const loadData = useCallback(async () => {
         setLoading(true)
-        const data = await fetchSupportTickets()
-        setRows(data)
+        const payload = await postJson('/api/admin/support/list')
+        setRows(payload.rows || [])
         setLoading(false)
-    }, [])
+    }, [postJson])
     useEffect(() => {
         const id = setTimeout(() => {
             void loadData()
@@ -59,30 +66,21 @@ export default function AdminSupportPage() {
     }, [loadData])
     useEffect(() => {
         const loadSla = async () => {
-            const { data } = await supabase.from('admin_sla_settings').select('sla_hours').eq('queue', 'support').maybeSingle()
-            if (data?.sla_hours) setSlaHours(data.sla_hours)
+            const payload = await postJson('/api/admin/sla', { queue: 'support' })
+            if (payload?.sla_hours) setSlaHours(payload.sla_hours)
         }
         void loadSla()
-    }, [supabase])
+    }, [postJson])
     useEffect(() => {
         const id = setTimeout(() => setNow(Date.now()), 0)
         return () => clearTimeout(id)
     }, [dateFilter, overdueOnly, priorityFilter, search, sortOrder, statusFilter])
     const handleUpdate = async (id: string, status: SupportTicket['status'], userId?: string) => {
-        await updateSupportTicket(id, { status, admin_note: notes[id] || null })
-        if (userId) {
-            await supabase.from('notifications').insert({
-                user_id: userId,
-                type: 'support',
-                payload: { title: 'Destek talebi güncellendi', body: `Durum: ${status}` },
-            })
-        }
+        await postJson('/api/admin/support/update', { id, status, admin_note: notes[id] || null, user_id: userId })
         await loadData()
     }
     const logPlaybook = async (id: string, step: string, checked: boolean) => {
-        const { data } = await supabase.auth.getUser()
-        await supabase.from('admin_audit_logs').insert({
-            admin_id: data.user?.id || null,
+        await postJson('/api/admin/audit/log', {
             action: 'playbook_step',
             target_table: 'support_tickets',
             target_id: id,
@@ -90,27 +88,13 @@ export default function AdminSupportPage() {
         })
     }
     const loadThread = async (ticketId: string) => {
-        const { data } = await supabase
-            .from('support_messages')
-            .select('id,sender_role,body,created_at')
-            .eq('ticket_id', ticketId)
-            .order('created_at', { ascending: true })
-        setThreads((prev) => ({ ...prev, [ticketId]: (data || []) as Array<{ id: string; sender_role: string; body: string; created_at: string }> }))
+        const payload = await postJson('/api/admin/support/thread', { ticket_id: ticketId })
+        setThreads((prev) => ({ ...prev, [ticketId]: (payload.rows || []) as Array<{ id: string; sender_role: string; body: string; created_at: string }> }))
     }
     const sendReply = async (ticket: SupportTicket) => {
         const body = replyMap[ticket.id]?.trim()
         if (!body) return
-        await supabase.from('support_messages').insert({
-            ticket_id: ticket.id,
-            sender_id: ticket.user_id,
-            sender_role: 'admin',
-            body,
-        })
-        await supabase.from('notifications').insert({
-            user_id: ticket.user_id,
-            type: 'support',
-            payload: { title: 'Destek yaniti', body },
-        })
+        await postJson('/api/admin/support/reply', { ticket_id: ticket.id, user_id: ticket.user_id, body })
         setReplyMap((prev) => ({ ...prev, [ticket.id]: '' }))
         await loadThread(ticket.id)
     }
@@ -156,7 +140,7 @@ export default function AdminSupportPage() {
     const runBatch = async (status: SupportTicket['status']) => {
         if (selectedIds.length === 0) return
         for (const id of selectedIds) {
-            await updateSupportTicket(id, { status })
+            await postJson('/api/admin/support/update', { id, status })
         }
         await loadData()
         setSelected({})

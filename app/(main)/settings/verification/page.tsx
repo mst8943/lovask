@@ -11,7 +11,7 @@ const typeLabels: Record<VerificationType, string> = {
     email: 'E-posta',
     device: 'Cihaz',
     photo: 'Fotoğraf',
-    selfie: 'Selfie',
+    selfie: 'Fotoğraf',
     kyc: 'Kimlik',
     video: 'Video',
 }
@@ -150,26 +150,6 @@ export default function VerificationPage() {
                             onChange={(e) => {
                                 const file = e.target.files?.[0]
                                 if (file) handlePhotoUpload(file, 'photo')
-                                e.currentTarget.value = ''
-                            }}
-                        />
-                    </label>
-                </div>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="font-semibold">Selfie Doğrulama</div>
-                        <div className="text-xs text-gray-400">Yüz doğrulama için selfie yükle</div>
-                    </div>
-                    <label className="px-3 py-2 rounded-lg bg-white/10 text-xs cursor-pointer flex items-center gap-2">
-                        <Upload size={14} />
-                        Yükle
-                        <Input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file) handlePhotoUpload(file, 'selfie')
                                 e.currentTarget.value = ''
                             }}
                         />

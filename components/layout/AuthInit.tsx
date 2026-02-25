@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { claimDailyBonus } from '@/services/economyService'
@@ -8,19 +8,30 @@ export default function AuthInit({ children }: { children: React.ReactNode }) {
     const [hydrated, setHydrated] = useState(false)
     const { setSession, setLoading } = useAuthStore()
     const supabase = createClient()
+    const retryRef = useRef(0)
     useEffect(() => {
         // 1. Get initial session
         const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            setSession(session)
-            setLoading(false)
-            setHydrated(true)
-            if (session?.user) {
-                try {
-                    await claimDailyBonus()
-                } catch {
-                    // non-blocking
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                setSession(session)
+                setLoading(false)
+                setHydrated(true)
+                if (session?.user) {
+                    try {
+                        await claimDailyBonus()
+                    } catch {
+                        // non-blocking
+                    }
                 }
+            } catch (err: unknown) {
+                if (err instanceof Error && err.name === 'AbortError' && retryRef.current < 3) {
+                    retryRef.current += 1
+                    setTimeout(getSession, 200)
+                    return
+                }
+                setLoading(false)
+                setHydrated(true)
             }
         }
         getSession()

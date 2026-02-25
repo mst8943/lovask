@@ -8,6 +8,8 @@ import { getProfileAvatar } from '@/utils/avatar'
 import { Button } from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { usePresenceStore } from '@/store/usePresenceStore'
+import { canShowLastActive } from '@/utils/lastActive'
+import type { LastActiveVisibility } from '@/utils/lastActive'
 export default function MatchesPage() {
     const { matches, isLoading } = useMatches()
     const [filter, setFilter] = useState<'all' | 'favorites' | 'archived' | 'trash'>('all')
@@ -104,7 +106,9 @@ export default function MatchesPage() {
                         const unreadCount = match.chat_state?.unread_count || 0
                         const lastActive = (user as { users?: { last_active_at?: string | null } }).users?.last_active_at
                         const isOnlineFallback = !!lastActive && now - new Date(lastActive).getTime() < 10 * 60 * 1000
-                        const isOnline = user.is_bot || onlineUsers.has(user.id) || isOnlineFallback
+                        const canShowPresence = canShowLastActive((user as { last_active_visibility?: LastActiveVisibility }).last_active_visibility, true)
+                        const isHiddenPresence = (user as { last_active_visibility?: LastActiveVisibility }).last_active_visibility === 'hidden'
+                        const isOnline = canShowPresence && (user.is_bot || onlineUsers.has(user.id) || isOnlineFallback)
                         return (
                             <Link
                                 key={match.id}
@@ -119,7 +123,11 @@ export default function MatchesPage() {
                                         className="object-cover"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
-                                    {isOnline && (
+                                    {isHiddenPresence ? (
+                                        <span className="absolute bottom-2 right-2 text-[8px] px-1.5 py-0.5 rounded-full bg-black/60 text-slate-300">
+                                            Gizli
+                                        </span>
+                                    ) : isOnline && (
                                         <span className="absolute bottom-2 right-2 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black/60" />
                                     )}
                                 </div>

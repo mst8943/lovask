@@ -58,32 +58,39 @@ export default function PrivacySettingsPage() {
     }, [user, supabase])
 
     const handleSave = async () => {
-        if (!user) return
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+            setError('Oturum bulunamadı. Lütfen yeniden giriş yapın.')
+            return
+        }
         setSaving(true)
         setError(null)
-        const { error } = await supabase
-            .from('profiles')
-            .update({ hide_from_discovery: hideFromDiscovery, location_visibility: locationVisibility })
-            .eq('id', user.id)
-
-        const { error: settingsError } = await supabase
-            .from('user_settings')
-            .upsert({
-                user_id: user.id,
+        const res = await fetch('/api/profile/privacy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+                hide_from_discovery: hideFromDiscovery,
+                location_visibility: locationVisibility,
                 last_active_visibility: lastActiveVisibility,
                 message_request_mode: messageRequestMode,
                 harassment_mode: harassmentMode,
-            }, { onConflict: 'user_id' })
-
-        if (error) setError(error.message)
-        if (settingsError) setError(settingsError.message)
+            }),
+        })
+        if (!res.ok) {
+            const message = await res.text()
+            setError(message || 'Kaydetme basarisiz.')
+        } else {
+            toast.push('Kaydedildi', 'success')
+        }
         setSaving(false)
     }
 
     return (
         <div className="space-y-6 pb-8">
-
-            <div className="glass-panel p-6 rounded-2xl space-y-4">
+            <div className="glass-panel p-6 rounded-2xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="font-semibold">Kesfette Gizle</h2>
@@ -102,23 +109,6 @@ export default function PrivacySettingsPage() {
                     </label>
                 </div>
 
-                {error && (
-                    <div className="p-3 text-sm text-red-200 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        {error}
-                    </div>
-                )}
-
-                <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    variant="secondary"
-                    className="w-full"
-                >
-                    {saving ? 'Kaydediliyor...' : 'Degisiklikleri Kaydet'}
-                </Button>
-            </div>
-
-            <div className="glass-panel p-6 rounded-2xl space-y-4">
                 <div className="space-y-3">
                     <div className="text-sm font-semibold">Konum gorunurlugu</div>
                     <div className="flex flex-wrap gap-2">
@@ -256,6 +246,21 @@ export default function PrivacySettingsPage() {
                 {!canIncognito && (
                     <div className="text-xs text-gray-500">Bu ozellik bu paket icin kapali.</div>
                 )}
+
+                {error && (
+                    <div className="p-3 text-sm text-red-200 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    variant="secondary"
+                    className="w-full"
+                >
+                    {saving ? 'Kaydediliyor...' : 'Degisiklikleri Kaydet'}
+                </Button>
             </div>
         </div>
     )

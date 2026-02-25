@@ -1,0 +1,125 @@
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-1 mt-1.5 mb-1 flex-wrap">
+                                    {['👍', '❤️', '😂', '🔥'].map((emoji) => (
+                                        <button
+                                            key={`${msg.id}-${emoji}`}
+                                            onClick={() => toggleReaction(msg.id, emoji)}
+                                            className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 hover:scale-105 transition-all border border-[var(--foreground)]/5"
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                    {reactions[msg.id] && (
+                                        <div className="text-[10px] text-gray-300 ml-2">
+                                            {Object.entries(reactions[msg.id]).map(([emoji, count]) => (
+                                                <span key={`${msg.id}-${emoji}`} className="mr-2">{emoji} {count}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="text-[10px] opacity-70 text-right mt-1">
+                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                {isMe && (
+                                    <div className="text-[10px] text-right mt-0.5">
+                                        {canSeeReadReceipts ? (
+                                            msg.read_at ? <span className="opacity-60 text-[9px] font-medium">Görüldü</span> : ''
+                                        ) : (
+                                            <Button
+                                                type="button"
+                                                variant="link"
+                                                onClick={promptReadReceipts}
+                                                className="h-auto px-0 text-[9px] text-[var(--foreground)]/40 hover:text-pink-500 transition-colors no-underline font-medium"
+                                            >
+                                                {`${otherUser?.display_name || 'Karşı taraf'} mesajını gördü mü?`}
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
+                <div ref={scrollRef} />
+            </div>
+            <div className="p-3 sm:p-4 bg-[var(--background)]/80 backdrop-blur-xl border-t border-[var(--foreground)]/5 safe-area-bottom transition-colors">
+                {messages.length === 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2 items-center">
+                        {introSuggestions.length === 0 ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={loadIntroSuggestions}
+                                disabled={introLoading}
+                                className="rounded-full text-xs px-4 border border-[var(--foreground)]/10"
+                            >
+                                {introLoading ? 'Öneriler hazırlanıyor...' : 'Akıllı giriş önerileri'}
+                            </Button>
+                        ) : (
+                            introSuggestions.map((text) => (
+                                <Button
+                                    key={text}
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setInput(text)}
+                                    className="text-xs border border-[var(--foreground)]/10"
+                                >
+                                    {text}
+                                </Button>
+                            ))
+                        )}
+                    </div>
+                )}
+                {showGifts && (
+                    <div className="w-full mb-2 rounded-2xl border border-[var(--foreground)]/10 bg-[var(--foreground)]/5 p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="font-semibold text-sm">Hediye gönder</div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setShowGifts(false)}
+                                className="h-auto px-0 text-xs opacity-60 hover:opacity-100"
+                            >
+                                Kapat
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {giftList.map((g) => (
+                                <Button
+                                    key={g.id}
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => handleSendGift(g.id)}
+                                    disabled={sendingGift}
+                                    className="w-full bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-xl p-3 text-left hover:bg-[var(--foreground)]/10"
+                                >
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[var(--foreground)]/5">
+                                            <Image
+                                                src={getGiftStickerUrl(g.name) || g.image_url || ''}
+                                                alt={g.name}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-semibold">{g.name}</div>
+                                            <div className="text-xs opacity-60">{g.price} jeton</div>
+                                        </div>
+                                    </div>
+                                </Button>
+                            ))}
+                            {giftList.length === 0 && (
+                                <div className="text-xs opacity-60 col-span-2">Hediye bulunamadı.</div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                <form onSubmit={handleSend} className="flex gap-2 items-end max-w-4xl mx-auto relative px-1 w-full">
+                    <Input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"

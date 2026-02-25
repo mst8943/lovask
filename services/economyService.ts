@@ -24,6 +24,8 @@ export const requestBankTransfer = async (payload: {
     amount: number
     coinsAmount?: number
     premiumMonths?: number
+    coinPackageId?: string
+    premiumPlanId?: string
     reference?: string
     receiptUrl?: string
 }) => {
@@ -38,6 +40,8 @@ export const requestBankTransfer = async (payload: {
             amount: payload.amount,
             coins_amount: payload.coinsAmount || null,
             premium_months: payload.premiumMonths || null,
+            coin_package_id: payload.coinPackageId || null,
+            premium_plan_id: payload.premiumPlanId || null,
             reference: payload.reference || null,
             receipt_url: payload.receiptUrl || null,
         })

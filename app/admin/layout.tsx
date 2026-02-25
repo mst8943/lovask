@@ -31,8 +31,10 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const { user, setUser } = useAuthStore()
     const supabase = useMemo(() => createClient(), [])
-    const [unread, setUnread] = useState(0)
+    const [notificationUnread, setNotificationUnread] = useState(0)
+    const [actionableUnread, setActionableUnread] = useState(0)
     const [slaRisk, setSlaRisk] = useState(0)
+    const [menuBadges, setMenuBadges] = useState<Record<string, number>>({})
     const { has } = useAdminPermissions(user?.id)
 
     const [isCollapsed, setIsCollapsed] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false))
@@ -47,18 +49,6 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
     const menuRef = useRef<HTMLDivElement>(null)
     const [menuOpen, setMenuOpen] = useState(false)
     const realtimeOnlineCount = usePresenceStore((s) => s.onlineUsers.size)
-
-    useEffect(() => {
-        // Fetch actual online users (active in last 10 minutes)
-        const fetchOnlineUsers = async () => {
-            const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-            const { count } = await supabase.from('users').select('id', { count: 'exact', head: true }).gte('last_active_at', tenMinsAgo)
-            setOnlineUsersFallback(count || 0)
-        }
-        fetchOnlineUsers()
-        const interval = setInterval(fetchOnlineUsers, 60000)
-        return () => clearInterval(interval)
-    }, [supabase])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -133,6 +123,7 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
                 { href: '/admin/economy', label: 'Ekonomi', icon: CreditCard, perm: 'payments.manage' },
                 { href: '/admin/bank-transfers', label: t('nav.bank_transfers'), icon: Landmark, perm: 'payments.manage' },
                 { href: '/admin/access-plans', label: t('nav.access_plans'), icon: Timer, perm: 'payments.manage' },
+                { href: '/admin/packages', label: 'Paketler', icon: Gift, perm: 'payments.manage' },
                 { href: '/admin/boosts', label: 'Boostlar', icon: Zap, perm: 'payments.manage' },
             ],
         },
@@ -155,6 +146,7 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
                 { href: '/admin/ops', label: 'Operasyon Merkezi', icon: Activity, perm: 'ops.view' },
                 { href: '/admin/audit', label: 'Audit', icon: ShieldAlert, perm: 'ops.view' },
                 { href: '/admin/settings', label: 'Admin Ayarları', icon: Settings, perm: 'ops.view' },
+                { href: '/admin/staff', label: 'Yönetici Ekibi', icon: ShieldCheck, perm: 'ops.view' },
             ],
         },
         {
@@ -185,6 +177,7 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
             level: 'advanced',
             items: [
                 { href: '/admin/ai', label: t('nav.ai_usage'), icon: Cpu, perm: 'ops.view' },
+                { href: '/admin/ai-fallback', label: 'AI Fallback', icon: Sliders, perm: 'ops.view' },
             ],
         },
     ], [t])
@@ -218,60 +211,7 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
     })
 
     useEffect(() => {
-        const load = async () => {
-            if (!user) return
-            const { count } = await supabase
-                .from('notifications')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', user.id)
-                .eq('is_read', false)
-            setUnread(count || 0)
-        }
-        load()
-    }, [user, supabase])
-
-    useEffect(() => {
-        const loadSla = async () => {
-            if (!user) return
-            const { data: slaRows } = await supabase.from('admin_sla_settings').select('queue,sla_hours')
-            const slaMap = Object.fromEntries((slaRows || []).map((r: { queue: string; sla_hours: number }) => [r.queue, r.sla_hours]))
-            const [supportRes, reportsRes, verRes, transfersRes] = await Promise.all([
-                supabase.from('support_tickets').select('id,created_at,status').in('status', ['open', 'pending']).order('created_at', { ascending: false }).limit(200),
-                supabase.from('reports').select('id,created_at,status').eq('status', 'pending').order('created_at', { ascending: false }).limit(200),
-                supabase.from('user_verifications').select('id,created_at,status').eq('status', 'pending').order('created_at', { ascending: false }).limit(200),
-                supabase.from('bank_transfers').select('id,created_at,status').eq('status', 'pending').order('created_at', { ascending: false }).limit(200),
-            ])
-            const now = Date.now()
-            const countRisk = (rows: Array<{ created_at: string }>, slaHours: number) => {
-                const totalMs = slaHours * 60 * 60 * 1000
-                return rows.reduce((acc, row) => {
-                    const due = new Date(row.created_at).getTime() + totalMs
-                    if (now >= due) return acc + 1
-                    if (due - now <= totalMs * 0.2) return acc + 1
-                    return acc
-                }, 0)
-            }
-            const risk =
-                countRisk((supportRes.data || []) as Array<{ created_at: string }>, slaMap.support || 6)
-                + countRisk((reportsRes.data || []) as Array<{ created_at: string }>, slaMap.reports || 2)
-                + countRisk((verRes.data || []) as Array<{ created_at: string }>, slaMap.verifications || 24)
-                + countRisk((transfersRes.data || []) as Array<{ created_at: string }>, slaMap.payments || 12)
-            setSlaRisk(risk)
-        }
-        const id = setTimeout(() => {
-            void loadSla()
-        }, 0)
-        return () => clearTimeout(id)
-    }, [user, supabase])
-
-    useEffect(() => {
         if (!user) return
-        fetch('/api/admin/access-log', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ path: pathname }),
-        }).catch(() => undefined)
-        // Access log tracking
         fetch('/api/admin/access-log', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -280,68 +220,44 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
     }, [user, pathname])
 
     useEffect(() => {
-        const loadSla = async () => {
+        const loadShell = async () => {
             if (!user) return
-            const start = performance.now()
-
-            const { data: slaRows } = await supabase.from('admin_sla_settings').select('queue,sla_hours')
-            const slaMap = Object.fromEntries((slaRows || []).map((r: { queue: string; sla_hours: number }) => [r.queue, r.sla_hours]))
-            const [supportRes, reportsRes, verRes, transfersRes] = await Promise.all([
-                supabase.from('support_tickets').select('id,created_at,status').in('status', ['open', 'pending']).order('created_at', { ascending: false }).limit(200),
-                supabase.from('reports').select('id,created_at,status').eq('status', 'pending').order('created_at', { ascending: false }).limit(200),
-                supabase.from('user_verifications').select('id,created_at,status').eq('status', 'pending').order('created_at', { ascending: false }).limit(200),
-                supabase.from('bank_transfers').select('id,created_at,status').eq('status', 'pending').order('created_at', { ascending: false }).limit(200),
-            ])
-
-            const end = performance.now()
-            const elapsed = Math.round(end - start)
+            const res = await fetch('/api/admin/shell-metrics', { method: 'POST' })
+            if (!res.ok) return
+            const payload = await res.json()
+            const elapsed = Number(payload?.duration_ms || 0)
             setSystemPing(elapsed)
             if (elapsed < 300) setSystemLoad('Düşük')
             else if (elapsed < 800) setSystemLoad('Normal')
             else setSystemLoad('Yüksek')
-
-            const actionableCount = (supportRes.data?.length || 0) + (reportsRes.data?.length || 0) + (verRes.data?.length || 0) + (transfersRes.data?.length || 0)
-            setUnread(actionableCount)
-
-            const now = Date.now()
-            const countRisk = (rows: Array<{ created_at: string }>, slaHours: number) => {
-                const totalMs = slaHours * 60 * 60 * 1000
-                return rows.reduce((acc, row) => {
-                    const due = new Date(row.created_at).getTime() + totalMs
-                    if (now >= due) return acc + 1
-                    if (due - now <= totalMs * 0.2) return acc + 1
-                    return acc
-                }, 0)
-            }
-            const risk =
-                countRisk((supportRes.data || []) as Array<{ created_at: string }>, slaMap.support || 6)
-                + countRisk((reportsRes.data || []) as Array<{ created_at: string }>, slaMap.reports || 2)
-                + countRisk((verRes.data || []) as Array<{ created_at: string }>, slaMap.verifications || 24)
-                + countRisk((transfersRes.data || []) as Array<{ created_at: string }>, slaMap.payments || 12)
-            setSlaRisk(risk)
+            setSlaRisk(Number(payload?.sla_risk || 0))
+            setNotificationUnread(Number(payload?.notification_unread || 0))
+            setActionableUnread(Number(payload?.actionable_unread || 0))
+            setMenuBadges(payload?.menu_badges || {})
+            setOnlineUsersFallback(Number(payload?.online_fallback || 0))
         }
 
         const id = setTimeout(() => {
-            void loadSla()
+            void loadShell()
         }, 0)
 
         // Refresh SLA every minute to keep admin updated
         const interval = setInterval(() => {
-            void loadSla()
+            void loadShell()
         }, 60000)
 
         return () => {
             clearTimeout(id)
             clearInterval(interval)
         }
-    }, [user, supabase])
+    }, [user])
 
     return (
         <AdminGate>
             <div className="min-h-screen bg-slate-50 text-slate-900 flex admin-font admin-shell relative overflow-x-hidden">
                 <aside className={clsx(
-                    "border-r border-slate-200 bg-white flex flex-col sticky top-0 h-screen self-start transition-all duration-300 z-50 flex-shrink-0 overflow-hidden",
-                    isCollapsed ? "w-[72px]" : "w-64 absolute md:relative"
+                    "border-r border-slate-200 bg-white flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 z-50 flex-shrink-0 overflow-hidden",
+                    isCollapsed ? "w-[72px]" : "w-64"
                 )}>
                     <div className={clsx(
                         "relative z-10 border-b border-slate-200 bg-white h-[76px] box-border shadow-[0_1px_0_rgba(15,23,42,0.04)] flex items-center shrink-0",
@@ -352,7 +268,12 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
                                 <div className="text-[10px] uppercase tracking-[0.22em] text-slate-400 font-medium">Lovask</div>
                                 <div className="flex items-center justify-between gap-2 mt-0.5 mb-1">
                                     <div className="text-base font-semibold tracking-[0.01em] text-slate-900 leading-none">{t('admin.title')}</div>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-md border border-slate-200 bg-slate-50 text-slate-500 font-medium">Admin</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded-md border border-slate-200 bg-slate-50 text-slate-500 font-medium">Admin</span>
+                                        <Link href="/admin-lite" className="text-[9px] px-1.5 py-0.5 rounded-md border border-amber-200 bg-amber-50 text-amber-700 font-semibold">
+                                            LITE
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -431,17 +352,25 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
                                                         >
                                                             <Icon size={isCollapsed ? 18 : 16} className={clsx('shrink-0 transition-colors', active ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600')} />
                                                             {!isCollapsed && <span className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>}
-                                                            {!isCollapsed && item.href === '/admin/notifications' && unread > 0 && (
-                                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
-                                                                    {unread}
-                                                                </span>
-                                                            )}
-                                                            {isCollapsed && item.href === '/admin/notifications' && unread > 0 && (
-                                                                <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white" />
-                                                            )}
-                                                        </Link>
-                                                    )
-                                                })}
+                                            {!isCollapsed && item.href === '/admin/notifications' && notificationUnread > 0 && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                                                    {notificationUnread}
+                                                </span>
+                                            )}
+                                            {!isCollapsed && item.href !== '/admin/notifications' && (menuBadges[item.href] || 0) > 0 && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                                    {menuBadges[item.href]}
+                                                </span>
+                                            )}
+                                            {isCollapsed && item.href === '/admin/notifications' && notificationUnread > 0 && (
+                                                <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white" />
+                                            )}
+                                            {isCollapsed && item.href !== '/admin/notifications' && (menuBadges[item.href] || 0) > 0 && (
+                                                <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 border-2 border-white" />
+                                            )}
+                                        </Link>
+                                    )
+                                })}
                                             </div>
                                         )}
                                     </div>
@@ -455,7 +384,7 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
                         )}
                     </div>
                 </aside>
-                <main className="flex-1">
+                <main className={clsx("flex-1", isCollapsed ? "ml-[72px]" : "ml-64")}>
                     <div className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-slate-200 px-6 h-[76px] flex items-center box-border">
                         <div className="flex items-center justify-between w-full">
                             <div className="flex-1 flex items-center justify-between gap-4 transition-all">
@@ -501,7 +430,7 @@ function AdminShellLayout({ children }: { children: React.ReactNode }) {
                                         </Link>
                                         <Link href="/admin/inbox" className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 border border-slate-200 shrink-0 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer relative" title="Operasyon Kutusu">
                                             <Inbox size={16} />
-                                            {unread > 0 && <span className="absolute top-0 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />}
+                                            {actionableUnread > 0 && <span className="absolute top-0 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />}
                                         </Link>
                                     </div>
                                     <div ref={menuRef} className="flex items-center gap-2 pl-2 border-l border-slate-200 ml-1 relative">

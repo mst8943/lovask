@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Calendar, MapPin, Users, Sparkles } from 'lucide-react'
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getProfileAvatar } from '@/utils/avatar'
+import { getLocationLabel } from '@/utils/location'
 
 export default function EventsPage() {
     const [events, setEvents] = useState<EventItem[]>([])
@@ -24,6 +25,7 @@ export default function EventsPage() {
             display_name: string | null
             age: number | null
             city: string | null
+            location_visibility?: 'public' | 'approx' | 'hidden' | null
             photos: string[] | null
             is_verified: boolean | null
             is_bot: boolean | null
@@ -166,7 +168,7 @@ export default function EventsPage() {
                             <div className="mt-4 space-y-3">
                                 <div className="flex items-center gap-2 text-xs text-gray-400">
                                     <Sparkles size={12} />
-                                    Etkinlikten önerilen profiller
+                                    Etkinlikten Ã¶nerilen profiller
                                 </div>
                                 {participantsLoading ? (
                                     <div className="text-xs text-gray-500">Katilimcilar yukleniyor...</div>
@@ -196,7 +198,7 @@ export default function EventsPage() {
                                                                 {profile.display_name || 'Kullanici'}
                                                             </div>
                                                             <div className="text-[11px] text-gray-400 truncate">
-                                                                {profile.age ? `${profile.age} • ` : ''}{profile.city || '—'}
+                                                                {profile.age ? `${profile.age} • ` : ''}{getLocationLabel(profile)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -213,3 +215,4 @@ export default function EventsPage() {
         </div>
     )
 }
+

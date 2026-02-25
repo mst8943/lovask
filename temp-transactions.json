@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cc30685b-8ba2-428f-acec-5ed8c4ce5abe",
+    "amount": 0,
+    "created_at": "2026-02-23T23:15:02.504008+00:00",
+    "type": "purchase"
+  },
+  {
+    "id": "679de1bc-4f9a-4c76-bd69-000656064e11",
+    "amount": 10,
+    "created_at": "2026-02-23T21:37:36.472872+00:00",
+    "type": "bonus"
+  },
+  {
+    "id": "8e5a9394-3800-4809-a8db-d3fa66528268",
+    "amount": -5,
+    "created_at": "2026-02-23T21:31:12.769421+00:00",
+    "type": "spend"
+  },
+  {
+    "id": "3636a0f0-a433-4017-bb5b-28ac46bad8c5",
+    "amount": 10,
+    "created_at": "2026-02-23T18:02:45.616812+00:00",
+    "type": "bonus"
+  },
+  {
+    "id": "71b54d24-1d09-493c-acc3-36e84c011c5f",
+    "amount": -20,
+    "created_at": "2026-02-23T17:56:52.68431+00:00",
+    "type": "spend"
+  }
+]

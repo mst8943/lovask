@@ -1,7 +1,6 @@
 ﻿'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { fetchVerifications, updateVerification, VerificationRow } from '@/services/verificationService'
+import { useCallback, useEffect, useState } from 'react'
+import { VerificationRow } from '@/services/verificationService'
 import { Button } from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { usePresenceStore } from '@/store/usePresenceStore'
@@ -28,7 +27,6 @@ const formatRemaining = (createdAt: string, slaHours: number) => {
     return `${hours}s ${minutes}d`
 }
 export default function AdminVerificationsPage() {
-    const supabase = useMemo(() => createClient(), [])
     const [loading, setLoading] = useState(true)
     const [rows, setRows] = useState<VerificationRow[]>([])
     const [notes, setNotes] = useState<Record<string, string>>({})
@@ -45,12 +43,22 @@ export default function AdminVerificationsPage() {
     const [slaHours, setSlaHours] = useState(SLA_HOURS)
     const [now, setNow] = useState(0)
     const onlineUsers = usePresenceStore((s) => s.onlineUsers)
+    const postJson = useCallback(async (url: string, body?: Record<string, unknown>) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        return res.json()
+    }, [])
     const loadData = useCallback(async () => {
         setLoading(true)
-        const data = await fetchVerifications()
-        setRows(data)
+        const payload = await postJson('/api/admin/verifications/list')
+        setRows(payload.rows || [])
+        setProofLinks(payload.proofLinks || {})
         setLoading(false)
-    }, [])
+    }, [postJson])
     useEffect(() => {
         const id = setTimeout(() => {
             void loadData()
@@ -59,66 +67,22 @@ export default function AdminVerificationsPage() {
     }, [loadData])
     useEffect(() => {
         const loadSla = async () => {
-            const { data } = await supabase.from('admin_sla_settings').select('sla_hours').eq('queue', 'verifications').maybeSingle()
-            if (data?.sla_hours) setSlaHours(data.sla_hours)
+            const payload = await postJson('/api/admin/sla', { queue: 'verifications' })
+            if (payload?.sla_hours) setSlaHours(payload.sla_hours)
         }
         void loadSla()
-    }, [supabase])
+    }, [postJson])
     useEffect(() => {
         const id = setTimeout(() => setNow(Date.now()), 0)
         return () => clearTimeout(id)
     }, [dateFilter, deviceOnly, proofOnly, priorityFilter, search, statusFilter, typeFilter])
-    useEffect(() => {
-        let active = true
-        const loadLinks = async () => {
-            const next: Record<string, string> = {}
-            await Promise.all(rows.map(async (row) => {
-                if (!row.proof_url) return
-                if (/^https?:\/\//i.test(row.proof_url)) {
-                    next[row.id] = row.proof_url
-                    return
-                }
-                const { data } = await supabase
-                    .storage
-                    .from('verification')
-                    .createSignedUrl(row.proof_url, 3600)
-                if (data?.signedUrl) {
-                    next[row.id] = data.signedUrl
-                }
-            }))
-            if (active) setProofLinks(next)
-        }
-        const id = setTimeout(() => {
-            void loadLinks()
-        }, 0)
-        return () => {
-            active = false
-            clearTimeout(id)
-        }
-    }, [rows, supabase])
     const handleUpdate = async (id: string, status: 'approved' | 'rejected') => {
         const note = notes[id] || null
-        const updated = await updateVerification(id, status, note)
-        if (updated.type === 'photo' && status === 'approved') {
-            await supabase
-                .from('profiles')
-                .update({ is_verified: true })
-                .eq('id', updated.user_id)
-        }
-        await supabase.from('notifications').insert({
-            user_id: updated.user_id,
-            type: 'verification',
-            payload: {
-                title: 'Doğrulama sonucu',
-                body: status === 'approved' ? 'Doğrulama onaylandı.' : 'Doğrulama reddedildi.',
-            },
-        })
+        await postJson('/api/admin/verifications/update', { id, status, admin_note: note })
         await loadData()
     }
     const logPlaybook = async (id: string, step: string, checked: boolean) => {
-        const { data } = await supabase.auth.getUser()
-        await supabase.from('admin_audit_logs').insert({
-            admin_id: data.user?.id || null,
+        await postJson('/api/admin/audit/log', {
             action: 'playbook_step',
             target_table: 'user_verifications',
             target_id: id,

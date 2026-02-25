@@ -1,6 +1,5 @@
 ﻿'use client'
-import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import { Inbox } from 'lucide-react'
 import Link from 'next/link'
 import Spinner from '@/components/ui/Spinner'
@@ -16,7 +15,6 @@ type InboxItem = {
     meta?: string | null
 }
 export default function AdminInboxPage() {
-    const supabase = useMemo(() => createClient(), [])
     const [loading, setLoading] = useState(true)
     const [items, setItems] = useState<InboxItem[]>([])
     const [filter, setFilter] = useState<'all' | InboxItem['type']>('all')
@@ -26,70 +24,19 @@ export default function AdminInboxPage() {
     useEffect(() => {
         const load = async () => {
             setLoading(true)
-            const [supportRes, reportsRes, verRes, notifRes] = await Promise.all([
-                supabase.from('support_tickets').select('id,user_id,subject,status,created_at').order('created_at', { ascending: false }).limit(50),
-                supabase.from('reports').select('id,reported_id,reporter_id,reason,status,created_at').order('created_at', { ascending: false }).limit(50),
-                supabase.from('user_verifications').select('id,user_id,type,status,created_at').order('created_at', { ascending: false }).limit(50),
-                supabase.from('notifications').select('id,user_id,type,created_at').order('created_at', { ascending: false }).limit(50),
-            ])
-            const support = (supportRes.data || []).map((r: { id: string; user_id: string; subject: string; status: string; created_at: string }) => ({
-                id: r.id,
-                type: 'support' as const,
-                title: r.subject,
-                status: r.status,
-                userId: r.user_id,
-                created_at: r.created_at,
-                targetUrl: '/admin/support',
-            }))
-            const reports = (reportsRes.data || []).map((r: { id: string; reported_id: string; reporter_id: string; reason: string | null; status: string; created_at: string }) => ({
-                id: r.id,
-                type: 'report' as const,
-                title: r.reason || 'Rapor',
-                status: r.status,
-                userId: r.reported_id,
-                created_at: r.created_at,
-                targetUrl: '/admin/reports',
-                meta: r.reporter_id,
-            }))
-            const verifications = (verRes.data || []).map((r: { id: string; user_id: string; type: string; status: string; created_at: string }) => ({
-                id: r.id,
-                type: 'verification' as const,
-                title: `Doğrulama: ${r.type}`,
-                status: r.status,
-                userId: r.user_id,
-                created_at: r.created_at,
-                targetUrl: '/admin/verifications',
-            }))
-            const notifications = (notifRes.data || []).map((r: { id: string; user_id: string; type: string; created_at: string }) => ({
-                id: r.id,
-                type: 'notification' as const,
-                title: `Bildirim: ${r.type}`,
-                created_at: r.created_at,
-                userId: r.user_id,
-                targetUrl: '/admin/notifications',
-            }))
-            const merged = [...support, ...reports, ...verifications, ...notifications]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .slice(0, 150)
-            setItems(merged)
-            const ids = Array.from(new Set(merged.map((m) => m.userId).filter(Boolean))) as string[]
-            if (ids.length > 0) {
-                const { data: users } = await supabase
-                    .from('users')
-                    .select('id,last_active_at')
-                    .in('id', ids)
-                const next: Record<string, string | null> = {}
-                for (const u of (users || []) as Array<{ id: string; last_active_at: string | null }>) {
-                    next[u.id] = u.last_active_at
-                }
-                setLastActiveMap(next)
+            const res = await fetch('/api/admin/inbox/summary', { method: 'POST' })
+            if (res.ok) {
+                const payload = await res.json()
+                setItems(Array.isArray(payload?.items) ? payload.items : [])
+                setLastActiveMap(payload?.last_active_map || {})
             } else {
+                setItems([])
                 setLastActiveMap({})
             }
             setLoading(false)
         }
         load()
-    }, [supabase])
+    }, [])
     useEffect(() => {
         const id = setInterval(() => setNow(Date.now()), 60000)
         return () => clearInterval(id)

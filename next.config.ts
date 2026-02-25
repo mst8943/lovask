@@ -11,6 +11,16 @@ const withPWAConfig = withPWA({
     disableDevLogs: true,
     runtimeCaching: [
       {
+        urlPattern: /^https?:\/\/[^/]+\/admin(\/|$).*$/i,
+        handler: 'NetworkOnly',
+        options: { cacheName: 'admin' }
+      },
+      {
+        urlPattern: /^https?:\/\/[^/]+\/api\/admin\/.*$/i,
+        handler: 'NetworkOnly',
+        options: { cacheName: 'admin-api' }
+      },
+      {
         urlPattern: /^https?:\/\/[^/]+\/(?!_next).*$/i,
         handler: 'NetworkFirst',
         options: {
@@ -66,6 +76,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.pexels.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
       }
     ]
   },

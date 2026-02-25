@@ -1,6 +1,5 @@
 ﻿'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCallback, useEffect, useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
 type Transfer = {
     id: string
@@ -20,21 +19,18 @@ export default function BankTransfersPage() {
     const [loading, setLoading] = useState(true)
     const [actionId, setActionId] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
-    const supabase = useMemo(() => createClient(), [])
     const load = useCallback(async () => {
         setLoading(true)
         setError(null)
-        const { data, error } = await supabase
-            .from('bank_transfers')
-            .select('*, users:users!bank_transfers_user_id_fkey(email)')
-            .order('created_at', { ascending: false })
-        if (error) {
-            setError(error.message)
-        } else if (data) {
-            setTransfers(data as Transfer[])
+        const res = await fetch('/api/admin/bank-transfers/list', { method: 'POST' })
+        if (!res.ok) {
+            setError(await res.text())
+        } else {
+            const payload = await res.json()
+            setTransfers((payload.rows || []) as Transfer[])
         }
         setLoading(false)
-    }, [supabase])
+    }, [])
     useEffect(() => {
         const id = setTimeout(() => {
             void load()
@@ -53,11 +49,12 @@ export default function BankTransfersPage() {
     }
     const verify = async (transferId: string, approve: boolean) => {
         setActionId(transferId)
-        const { error } = await supabase.rpc('verify_bank_transfer', {
-            p_transfer_id: transferId,
-            p_approve: approve,
+        const res = await fetch('/api/admin/bank-transfers/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transfer_id: transferId, approve }),
         })
-        if (!error) await load()
+        if (res.ok) await load()
         setActionId(null)
     }
     if (loading) {

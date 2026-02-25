@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit, rateLimitHeaders } from '@/lib/rateLimit'
 
 const pick = (obj: Record<string, unknown>, keys: string[]) => {
     const out: Record<string, unknown> = {}
@@ -16,6 +17,11 @@ export async function POST(req: Request) {
         const supabase = await createClient()
         const { data: auth } = await supabase.auth.getUser()
         if (!auth.user) return new NextResponse('Unauthorized', { status: 401 })
+
+        const rate = rateLimit(`profile-save:${auth.user.id}`, 10, 60_000)
+        if (!rate.ok) {
+            return new NextResponse('Too many requests', { status: 429, headers: rateLimitHeaders(10, rate) })
+        }
 
         const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
         const allowed = [

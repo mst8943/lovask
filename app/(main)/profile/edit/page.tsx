@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { fetchProfileVariantApprovals, fetchProfileVariantsEnabled } from '@/services/appSettingsService'
 import Spinner from '@/components/ui/Spinner'
+import { CITY_OPTIONS } from '@/utils/cities'
 interface ProfileData {
     id: string
     display_name: string
@@ -190,6 +191,7 @@ export default function EditProfilePage() {
                 const text = await res.text()
                 throw new Error(text || 'Save failed')
             }
+            toast.push('Kaydedildi', 'success')
             router.push('/profile')
         } catch (error) {
             console.error('Error saving profile:', error)
@@ -315,7 +317,7 @@ export default function EditProfilePage() {
     }
     return (
         <div className="profile-edit-shell pb-24">
-            <div className="profile-edit-header sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
+            <div className="profile-edit-header sticky top-0 z-50 bg-[var(--background)]/85 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
                 <Button onClick={() => router.back()} variant="ghost" size="icon" className="-ml-2">
                     <ArrowLeft size={20} />
                 </Button>
@@ -692,13 +694,16 @@ export default function EditProfilePage() {
                         <div className="space-y-2">
                             <label className="text-xs uppercase text-gray-500 font-semibold tracking-wider">Şehir</label>
                             <div className="relative">
-                                <Input
-                                    type="text"
+                                <select
                                     value={profile.city || ''}
                                     onChange={(e) => handleInputChange('city', e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 pl-10"
-                                    placeholder="Nerede yaşıyorsun?"
-                                />
+                                    className="w-full bg-white/5 border border-white/10 pl-10 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-500/50 transition-all appearance-none"
+                                >
+                                    <option value="" className="bg-black">Şehir seç</option>
+                                    {CITY_OPTIONS.map((city) => (
+                                        <option key={city} value={city} className="bg-black">{city}</option>
+                                    ))}
+                                </select>
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
                                     <MapPin size={16} />
                                 </div>

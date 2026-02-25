@@ -14,6 +14,7 @@ export default function MainLayout({
         <AuthGate>
             <div className="flex flex-col min-h-screen bg-[var(--background)] text-[var(--foreground)] overflow-x-hidden">
                 <UserHeader />
+                <div className="h-16" />
 
                 {/* Main Content Area */}
                 <main className="flex-1 w-full max-w-md mx-auto px-4 py-4 pb-20 md:pb-4 md:max-w-4xl">

@@ -27,12 +27,8 @@ export async function POST(req: Request) {
         const body = await req.json().catch(() => ({}))
         const provider = body?.provider as Provider | undefined
         const kind = body?.kind as PaymentKind | undefined
-        const amount = Number(body?.amount || 0)
+        let amount = Number(body?.amount || 0)
         const metadata = (body?.metadata || {}) as Record<string, unknown>
-
-        if (!provider || !kind || !Number.isFinite(amount) || amount <= 0) {
-            return new NextResponse('Invalid payload', { status: 400 })
-        }
 
         const admin = createAdminClient()
         const { data: settingRow } = await admin
@@ -58,6 +54,36 @@ export async function POST(req: Request) {
                 metadata: { amount },
             })
             return new NextResponse('Amount too high', { status: 400 })
+        }
+
+        // If a package/plan is provided, enforce server-side pricing + amounts.
+        if (kind === 'coins' && metadata.package_id) {
+            const { data: pkg, error: pkgError } = await admin
+                .from('coin_packages')
+                .select('id,coins,price,is_active')
+                .eq('id', String(metadata.package_id))
+                .maybeSingle()
+            if (pkgError || !pkg || !pkg.is_active) {
+                return new NextResponse('Invalid coin package', { status: 400 })
+            }
+            metadata.coins = pkg.coins
+            amount = Number(pkg.price)
+        }
+        if (kind === 'premium' && metadata.plan_id) {
+            const { data: plan, error: planError } = await admin
+                .from('premium_plans')
+                .select('id,months,price,is_active')
+                .eq('id', String(metadata.plan_id))
+                .maybeSingle()
+            if (planError || !plan || !plan.is_active) {
+                return new NextResponse('Invalid premium plan', { status: 400 })
+            }
+            metadata.months = plan.months
+            amount = Number(plan.price)
+        }
+
+        if (!provider || !kind || !Number.isFinite(amount) || amount <= 0) {
+            return new NextResponse('Invalid payload', { status: 400 })
         }
 
         const now = new Date()

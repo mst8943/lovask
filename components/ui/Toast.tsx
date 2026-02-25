@@ -42,13 +42,13 @@ export default function ToastHost() {
                 <div
                     key={t.id}
                     className={clsx(
-                        'px-4 py-3 rounded-xl text-sm glass-panel border flex items-center gap-3',
-                        t.type === 'success' && 'border-green-500/40 text-green-200',
-                        t.type === 'error' && 'border-red-500/40 text-red-200',
-                        t.type === 'info' && 'border-white/10 text-gray-200'
+                        'px-4 py-3 rounded-[var(--radius-md)] text-sm shadow-[var(--shadow-lg)] border flex items-center gap-3 bg-surface-1 text-text-primary',
+                        t.type === 'success' && 'border-status-success/40 text-status-success',
+                        t.type === 'error' && 'border-status-destructive/40 text-status-destructive',
+                        t.type === 'info' && 'border-brand-primary/20 text-text-primary'
                     )}
                 >
-                    <span className="flex-1">{t.message}</span>
+                    <span className="flex-1 font-medium">{t.message}</span>
                     {t.action && (
                         <button
                             type="button"
@@ -56,7 +56,7 @@ export default function ToastHost() {
                                 t.action?.onClick()
                                 remove(t.id)
                             }}
-                            className="text-xs px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20"
+                            className="text-xs px-3 py-1.5 rounded-[var(--radius-full)] bg-surface-2 hover:bg-surface-3 transition-colors border border-surface-2"
                         >
                             {t.action.label}
                         </button>

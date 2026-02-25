@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Heart, MapPin, Star, ChevronLeft, ChevronRight, Target, HeartHandshake, Briefcase, Baby, PawPrint, Dumbbell, Ruler, GraduationCap, Cigarette, Wine, Landmark, Leaf, Users, Link as LinkIcon, Languages, Sparkles, Ban } from 'lucide-react'
+import { Heart, MapPin, Star, ChevronLeft, ChevronRight, Target, HeartHandshake, Briefcase, Baby, PawPrint, Dumbbell, Ruler, GraduationCap, Cigarette, Wine, Landmark, Leaf, Users, Link as LinkIcon, Languages, Sparkles, Ban, Flag } from 'lucide-react'
 import { likeUser } from '@/services/feedService'
 import { toggleFavorite } from '@/services/favoritesService'
 import { blockUser, reportUser } from '@/services/moderationService'
@@ -16,9 +16,12 @@ import AnimatedLoader from '@/components/ui/AnimatedLoader'
 import MatchCelebration from '@/components/ui/MatchCelebration'
 import InputDialog from '@/components/ui/InputDialog'
 import { getProfileAvatar } from '@/utils/avatar'
+import { getLocationLabel } from '@/utils/location'
 import { fetchUserStories, Story } from '@/services/storiesService'
 import { Button } from '@/components/ui/Button'
 import { usePresenceStore } from '@/store/usePresenceStore'
+import { canShowLastActive } from '@/utils/lastActive'
+import type { LastActiveVisibility } from '@/utils/lastActive'
 
 type ProfileDetail = {
     id: string
@@ -27,6 +30,7 @@ type ProfileDetail = {
     gender: string | null
     bio: string | null
     city: string | null
+    location_visibility?: 'public' | 'approx' | 'hidden' | null
     intent?: string | null
     relationship_goal?: string | null
     work_title?: string | null
@@ -47,6 +51,7 @@ type ProfileDetail = {
     is_bot?: boolean | null
     is_verified?: boolean | null
     users?: { is_premium: boolean; last_active_at: string | null } | null
+    last_active_visibility?: LastActiveVisibility
     [key: string]: unknown
 }
 
@@ -61,12 +66,14 @@ export default function ProfileDetailClient() {
     const [reporting, setReporting] = useState(false)
     const [blocking, setBlocking] = useState(false)
     const [isBot, setIsBot] = useState(false)
+    const [isMatched, setIsMatched] = useState(false)
     const [matchOpen, setMatchOpen] = useState(false)
     const [blockOpen, setBlockOpen] = useState(false)
     const [reportOpen, setReportOpen] = useState(false)
     const [stories, setStories] = useState<Story[]>([])
     const [galleryIndex, setGalleryIndex] = useState(0)
     const [compatibility, setCompatibility] = useState<{ score: number; breakdown: Record<string, unknown> } | null>(null)
+    const [showMoreDetails, setShowMoreDetails] = useState(false)
     const supabase = createClient()
     const toast = useToast()
     const isOwnProfile = !!user && !!profile && user.id === profile.id
@@ -76,7 +83,9 @@ export default function ProfileDetailClient() {
     const isOnlineRealtime = profile ? onlineUsers.has(profile.id) : false
     const lastActiveFallback = profile?.users?.last_active_at ? new Date(profile.users.last_active_at).getTime() : 0
     const isOnlineFallback = !!lastActiveFallback && now - lastActiveFallback < 10 * 60 * 1000
-    const isOnline = profile?.is_bot || isOnlineRealtime || isOnlineFallback
+    const canShowPresence = canShowLastActive(profile?.last_active_visibility, isMatched)
+    const isHiddenPresence = profile?.last_active_visibility === 'hidden'
+    const isOnline = (profile?.is_bot || isOnlineRealtime || isOnlineFallback) && canShowPresence
 
     useEffect(() => {
         const id = setInterval(() => setNow(Date.now()), 60000)
@@ -96,6 +105,43 @@ export default function ProfileDetailClient() {
 
             if (!error && data) setProfile(data as ProfileDetail)
             if (data?.is_bot) setIsBot(true)
+
+            if (user?.id) {
+                const { data: settings } = await supabase
+                    .from('user_settings')
+                    .select('last_active_visibility')
+                    .eq('user_id', id)
+                    .maybeSingle()
+                if (settings && data) {
+                    setProfile((prev) => prev ? ({ ...prev, last_active_visibility: settings.last_active_visibility }) : prev)
+                } else if (data) {
+                    const { data: session } = await supabase.auth.getSession()
+                    const token = session.session?.access_token
+                    if (token) {
+                        const res = await fetch('/api/profile/visibility', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ userId: id }),
+                        })
+                        if (res.ok) {
+                            const payload = await res.json()
+                            const visibility = (payload?.visibilities || {})[id]
+                            if (visibility) {
+                                setProfile((prev) => prev ? ({ ...prev, last_active_visibility: visibility }) : prev)
+                            }
+                        }
+                    }
+                }
+                const { data: matchRow } = await supabase
+                    .from('matches')
+                    .select('id')
+                    .or(`and(user_a.eq.${user.id},user_b.eq.${id}),and(user_a.eq.${id},user_b.eq.${user.id})`)
+                    .maybeSingle()
+                setIsMatched(!!matchRow)
+            }
 
             const { data: fav } = await supabase
                 .from('favorites')
@@ -191,8 +237,42 @@ export default function ProfileDetailClient() {
         if (!user || !profile) return
         setActionLoading(true)
         try {
-            const matchId = await createBotMatch(profile.id)
-            router.push(`/matches/${matchId}`)
+            if (isBot) {
+                const matchId = await createBotMatch(profile.id)
+                router.push(`/matches/${matchId}`)
+            } else {
+                // Check if a match already exists
+                const { data: matchA } = await supabase
+                    .from('matches')
+                    .select('id')
+                    .eq('user_a', user.id)
+                    .eq('user_b', profile.id)
+                    .maybeSingle()
+                const { data: matchB } = await supabase
+                    .from('matches')
+                    .select('id')
+                    .eq('user_a', profile.id)
+                    .eq('user_b', user.id)
+                    .maybeSingle()
+
+                let matchId = matchA?.id || matchB?.id
+
+                if (!matchId) {
+                    // Start a direct chat by creating a match
+                    const { data: newMatch, error } = await supabase
+                        .from('matches')
+                        .insert({
+                            user_a: user.id,
+                            user_b: profile.id,
+                            is_active: true
+                        })
+                        .select('id')
+                        .single()
+                    if (error) throw error
+                    matchId = newMatch.id
+                }
+                router.push(`/matches/${matchId}`)
+            }
         } catch (err: unknown) {
             toast.push(err instanceof Error ? err.message : 'Sohbet başlatılamadı.', 'error')
         } finally {
@@ -357,17 +437,7 @@ export default function ProfileDetailClient() {
         <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12 pb-24">
 
             {/* Mobile Header Nav */}
-            <div className="md:hidden flex items-center mb-6">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.back()}
-                    className="-ml-2 text-slate-600 dark:text-slate-400"
-                >
-                    <ChevronLeft className="mr-1" size={20} />
-                    Geri
-                </Button>
-            </div>
+            <div className="md:hidden flex items-center mb-6" />
 
             <div className="grid grid-cols-1 md:grid-cols-[45%_55%] gap-8 lg:gap-12 items-start">
 
@@ -475,7 +545,7 @@ export default function ProfileDetailClient() {
                                 </h1>
                                 <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">
                                     <MapPin size={16} />
-                                    {profile.city || 'Konum yok'}
+                                    {getLocationLabel(profile)}
                                     {profile.gender && (
                                         <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold uppercase">{profile.gender === 'male' ? 'Erkek' : profile.gender === 'female' ? 'Kadın' : 'Diğer'}</span>
                                     )}
@@ -499,8 +569,8 @@ export default function ProfileDetailClient() {
                         <div className="mt-6 flex divide-x divide-white/10 bg-[var(--background)]/70 rounded-xl border border-white/10 p-4">
                             <div className="flex-1 text-center px-4">
                                 <div className="text-xs uppercase font-bold text-slate-400 tracking-wider mb-1">Durum</div>
-                                <div className={`font-semibold ${isOnline ? 'text-emerald-500' : 'text-[var(--foreground)]'}`}>
-                                    {isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}
+                                <div className={`font-semibold ${isHiddenPresence ? 'text-slate-400' : isOnline ? 'text-emerald-500' : 'text-[var(--foreground)]'}`}>
+                                    {isHiddenPresence ? 'Gizli' : isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}
                                 </div>
                             </div>
                             <div className="flex-1 text-center px-4">
@@ -509,6 +579,24 @@ export default function ProfileDetailClient() {
                                     {stories.length > 0 ? `${stories.length} Paylaşım` : '-'}
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Mobil: Engelle / Raporla (Durum & Hikaye kartının altında) */}
+                        <div className="mt-4 md:hidden flex gap-3">
+                            <button
+                                onClick={handleBlock}
+                                className="flex-1 flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10 transition-colors"
+                            >
+                                <Ban size={14} />
+                                Engelle
+                            </button>
+                            <button
+                                onClick={handleReport}
+                                className="flex-1 flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10 transition-colors"
+                            >
+                                <Flag size={14} />
+                                Raporla
+                            </button>
                         </div>
 
                         {/* Hikaye Butonu (Varsa) */}
@@ -585,7 +673,7 @@ export default function ProfileDetailClient() {
                             { label: 'Diller', value: profile.languages?.length ? profile.languages.join(', ') : null, icon: Languages },
                             { label: 'Değerler', value: profile.values?.length ? profile.values.join(', ') : null, icon: Sparkles },
                             { label: 'Kırmızı Çizgiler', value: profile.dealbreakers?.length ? profile.dealbreakers.join(', ') : null, icon: Ban },
-                        ].map((item, i) => (
+                        ].filter((item) => item.value).slice(0, showMoreDetails ? 999 : 6).map((item, i) => (
                             item.value ? (
                                 <div key={i} className="flex gap-3">
                                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
@@ -599,26 +687,57 @@ export default function ProfileDetailClient() {
                             ) : null
                         ))}
                     </div>
+                    {(() => {
+                        const total = [
+                            { label: 'Niyet', value: intentLabel[profile.intent || ''] || profile.intent },
+                            { label: 'İlişki Hedefi', value: goalLabel[profile.relationship_goal || ''] || profile.relationship_goal },
+                            { label: 'Meslek', value: profile.work_title },
+                            { label: 'Aile Planı', value: familyLabel[profile.family_plans || ''] || profile.family_plans },
+                            { label: 'Evcil Hayvan', value: petsLabel[profile.pets || ''] || profile.pets },
+                            { label: 'Spor', value: fitnessLabel[profile.fitness || ''] || profile.fitness },
+                            { label: 'Boy', value: profileHeight ? `${profileHeight} cm` : null },
+                            { label: 'Eğitim', value: educationLabel[profileEducation || ''] || profileEducation },
+                            { label: 'Sigara', value: smokingLabel[profileSmoking || ''] || profileSmoking },
+                            { label: 'Alkol', value: alcoholLabel[profileAlcohol || ''] || profileAlcohol },
+                            { label: 'Din', value: religionLabel[profileReligion || ''] || profileReligion },
+                            { label: 'Çocuk', value: childrenLabel[profileChildren || ''] || profileChildren },
+                            { label: 'Yaşam Tarzı', value: lifestyleLabel[profileLifestyle || ''] || profileLifestyle },
+                            { label: 'Kimi Arıyor', value: profileLookingFor?.length ? profileLookingFor.map((g) => genderLabel[g] || g).join(', ') : null },
+                            { label: 'İlişki Tipi', value: relationshipTypeLabel[profileRelationshipType || ''] || profileRelationshipType },
+                            { label: 'Diller', value: profile.languages?.length ? profile.languages.join(', ') : null },
+                            { label: 'Değerler', value: profile.values?.length ? profile.values.join(', ') : null },
+                            { label: 'Kırmızı Çizgiler', value: profile.dealbreakers?.length ? profile.dealbreakers.join(', ') : null },
+                        ].filter((item) => item.value).length
+                        if (total <= 6) return null
+                        return (
+                            <button
+                                type="button"
+                                onClick={() => setShowMoreDetails((v) => !v)}
+                                className="mt-4 text-sm font-semibold text-pink-500 hover:text-pink-400 transition-colors"
+                            >
+                                {showMoreDetails ? 'Daha az göster' : 'Devamını gör'}
+                            </button>
+                        )
+                    })()}
 
 
                     {/* --- BUTONLAR (Masaüstü) --- */}
                     <div className="hidden md:flex flex-col gap-3 pt-6">
                         <div className="flex gap-3">
-                            {/* Bot ise Direkt Mesaj, Değilse Beğen */}
-                            {isBot ? (
-                                <Button
-                                    onClick={handleStartChat}
-                                    size="lg"
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-base font-semibold shadow-sm"
-                                >
-                                    Sohbet Başlat
-                                </Button>
-                            ) : (
+                            {/* Bot ise Direkt Mesaj Başlatabilir, Bot değilse ve normal biriyse de Sohbet Başlat (Eşleşme varsa ya da normal chat) ve Beğen */}
+                            <Button
+                                onClick={handleStartChat}
+                                size="lg"
+                                className="flex-1 rounded-xl text-base font-semibold text-white bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.25)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.35)] hover:brightness-110 transition-all"
+                            >
+                                Sohbet Başlat
+                            </Button>
+                            {!isBot && (
                                 <Button
                                     onClick={handleLike}
                                     size="lg"
                                     disabled={actionLoading}
-                                    className="flex-1 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-base font-semibold shadow-sm"
+                                    className="flex-1 rounded-xl text-base font-semibold text-white bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 border border-white/10 shadow-[0_10px_30px_rgba(236,72,153,0.3)] hover:brightness-110 transition-all"
                                 >
                                     <Heart className="mr-2" size={20} fill="currentColor" />
                                     Beğen
@@ -630,10 +749,13 @@ export default function ProfileDetailClient() {
                                 onClick={handleFavorite}
                                 size="lg"
                                 variant="outline"
-                                className={`px-4 rounded-xl border-slate-300 dark:border-slate-600 ${isFavorited ? 'text-amber-600 border-amber-200 bg-amber-50' : 'text-slate-600 dark:text-slate-300'}`}
+                                className={`px-4 rounded-xl border shadow-[0_10px_24px_rgba(0,0,0,0.2)] ${isFavorited
+                                    ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 border-amber-300/60 text-white'
+                                    : 'bg-white/5 border-white/15 text-white/80 hover:bg-white/10'
+                                    }`}
                                 title={isFavorited ? 'Favoriden kaldir' : 'Favoriye ekle'}
                             >
-                                <Star size={22} className={isFavorited ? 'fill-current' : ''} />
+                                <Star size={22} className={isFavorited ? 'fill-white text-white' : 'text-white/80'} />
                             </Button>
                         </div>
 
@@ -657,37 +779,37 @@ export default function ProfileDetailClient() {
             </div>
 
             {/* --- MOBİL SABİT BUTONLAR --- */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                <div className="flex gap-3 max-w-md mx-auto">
-                    {isBot ? (
-                        <Button
-                            onClick={handleStartChat}
-                            className="flex-1 rounded-xl bg-blue-600 text-white py-6"
-                        >
-                            Sohbet Başlat
-                        </Button>
-                    ) : (
+            <div className="md:hidden fixed bottom-14 left-0 right-0 z-50 bg-transparent px-6 pb-4 pt-2">
+                <div className="flex items-stretch gap-2.5 w-full max-w-3xl mx-auto">
+                    <Button
+                        onClick={handleStartChat}
+                        className="flex-1 rounded-xl h-12 text-base font-semibold text-white bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-white/10 shadow-[0_10px_28px_rgba(0,0,0,0.3)] hover:brightness-110 transition-all"
+                    >
+                        Sohbet
+                    </Button>
+                    {!isBot && (
                         <Button
                             onClick={handleLike}
                             disabled={actionLoading}
-                            className="flex-1 rounded-xl bg-pink-600 text-white py-6 text-lg font-bold shadow-pink-500/20 shadow-lg"
+                            className="flex-1 rounded-xl h-12 text-base font-semibold text-white bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 border border-white/10 shadow-[0_10px_28px_rgba(236,72,153,0.35)] hover:brightness-110 transition-all"
                         >
+                            <Heart className="mr-1" size={18} fill="currentColor" />
                             Beğen
                         </Button>
                     )}
                     <Button
                         onClick={handleFavorite}
                         variant="outline"
-                        className={`aspect-square h-auto rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ${isFavorited ? 'text-pink-500 border-pink-200' : 'text-slate-400'}`}
+                        className={`h-12 w-12 rounded-xl border shadow-[0_10px_24px_rgba(0,0,0,0.25)] ${isFavorited
+                            ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 border-amber-300/60 text-white'
+                            : 'bg-white/5 border-white/15 text-white/80 hover:bg-white/10'
+                            }`}
                     >
-                        <Heart size={24} className={isFavorited ? 'fill-current' : ''} />
+                        <Star size={24} className={isFavorited ? 'fill-white text-white' : 'text-white/80'} />
                     </Button>
                 </div>
 
-                <div className="flex justify-around mt-4 px-4">
-                    <button onClick={handleBlock} className="text-xs font-medium text-slate-400">Engelle</button>
-                    <button onClick={handleReport} className="text-xs font-medium text-slate-400">Raporla</button>
-                </div>
+                <div className="flex justify-around mt-4 px-4 md:hidden" />
             </div>
 
             {/* Modallar */}

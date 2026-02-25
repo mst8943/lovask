@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type RefundRow = {
     id: string
@@ -14,13 +13,15 @@ type RefundRow = {
 }
 
 export default function AdminRefundsPage() {
-    const supabase = createClient()
     const [rows, setRows] = useState<RefundRow[]>([])
 
     const load = useCallback(async () => {
-        const { data } = await supabase.from('refunds').select('*').order('created_at', { ascending: false })
-        setRows((data || []) as RefundRow[])
-    }, [supabase])
+        const res = await fetch('/api/admin/refunds/list', { method: 'POST' })
+        if (res.ok) {
+            const payload = await res.json()
+            setRows((payload.rows || []) as RefundRow[])
+        }
+    }, [])
 
     useEffect(() => {
         const id = setTimeout(() => {
@@ -30,7 +31,11 @@ export default function AdminRefundsPage() {
     }, [load])
 
     const updateStatus = async (id: string, status: string) => {
-        await supabase.from('refunds').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+        await fetch('/api/admin/refunds/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status }),
+        })
         await load()
     }
 

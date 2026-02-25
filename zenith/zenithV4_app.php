@@ -2632,33 +2632,56 @@ unset($su);
                         msgWrapper.className = 'zenithV4_msg_wrapper ' + (isMe ? 'sent' : 'received');
                         msgWrapper.dataset.msgId = msgId;
 
-                        const isGiftMsg = (msg.body || '').trim().startsWith('🎁');
-                        if (!isMe) {
-                            msgWrapper.innerHTML = `<img src="${otherUserAvatar}" class="msg_avatar">`;
-                        }
+                        const isGiftMsg = (msg.body || '').trim().startsWith('??');
+if (!isMe) {
+    const avatar = document.createElement('img');
+    avatar.className = 'msg_avatar';
+    avatar.src = otherUserAvatar;
+    msgWrapper.appendChild(avatar);
+}
 
-                        if (isGiftMsg) {
-                            const giftBubble = document.createElement('div');
-                            giftBubble.className = 'msg_content_group gift';
-                            giftBubble.innerHTML = `
-                                <div class="zenithV4_gift_bubble">
-                                    <div class="gift_badge">🎁 Hediye</div>
-                                    <div class="gift_body">${msg.body}</div>
-                                </div>
-                                <div class="msg_time">${timeStr}</div>
-                            `;
-                            msgWrapper.appendChild(giftBubble);
-                        } else {
-                            let html = `
-                                <div class="msg_content_group">
-                                    <div class="zenithV4_msg">${msg.body}</div>
-                                    <div class="msg_time">${timeStr}</div>
-                                </div>
-                            `;
-                            msgWrapper.innerHTML += html;
-                        }
+if (isGiftMsg) {
+    const giftGroup = document.createElement('div');
+    giftGroup.className = 'msg_content_group gift';
 
-                        box.appendChild(msgWrapper);
+    const giftBubble = document.createElement('div');
+    giftBubble.className = 'zenithV4_gift_bubble';
+
+    const giftBadge = document.createElement('div');
+    giftBadge.className = 'gift_badge';
+    giftBadge.textContent = '?? Hediye';
+
+    const giftBody = document.createElement('div');
+    giftBody.className = 'gift_body';
+    giftBody.textContent = msg.body || '';
+
+    const msgTime = document.createElement('div');
+    msgTime.className = 'msg_time';
+    msgTime.textContent = timeStr;
+
+    giftBubble.appendChild(giftBadge);
+    giftBubble.appendChild(giftBody);
+    giftGroup.appendChild(giftBubble);
+    giftGroup.appendChild(msgTime);
+    msgWrapper.appendChild(giftGroup);
+} else {
+    const msgGroup = document.createElement('div');
+    msgGroup.className = 'msg_content_group';
+
+    const msgText = document.createElement('div');
+    msgText.className = 'zenithV4_msg';
+    msgText.textContent = msg.body || '';
+
+    const msgTime = document.createElement('div');
+    msgTime.className = 'msg_time';
+    msgTime.textContent = timeStr;
+
+    msgGroup.appendChild(msgText);
+    msgGroup.appendChild(msgTime);
+    msgWrapper.appendChild(msgGroup);
+}
+
+box.appendChild(msgWrapper);
                         lastMessageId = Math.max(lastMessageId, msgId);
                     });
                     box.scrollTop = box.scrollHeight;
@@ -2687,12 +2710,20 @@ unset($su);
             msgWrapper.className = 'zenithV4_msg_wrapper sent';
             msgWrapper.style.opacity = '0.5';
             msgWrapper.dataset.temp = '1'; // optimistic marker
-            msgWrapper.innerHTML = `
-                <div class="msg_content_group">
-                    <div class="zenithV4_msg">${txt}</div>
-                    <div class="msg_time">${timeStr}</div>
-                </div>
-            `;
+            const msgGroup = document.createElement('div');
+msgGroup.className = 'msg_content_group';
+
+const msgText = document.createElement('div');
+msgText.className = 'zenithV4_msg';
+msgText.textContent = txt;
+
+const msgTime = document.createElement('div');
+msgTime.className = 'msg_time';
+msgTime.textContent = timeStr;
+
+msgGroup.appendChild(msgText);
+msgGroup.appendChild(msgTime);
+msgWrapper.appendChild(msgGroup);
             box.appendChild(msgWrapper);
             box.scrollTop = box.scrollHeight;
 
@@ -2885,15 +2916,25 @@ unset($su);
                 fetch('actions/get_profile_details.php?user_id=' + data.id)
                     .then(r => r.json())
                     .then(res => {
-                        if (res.success && res.gallery && res.gallery.length > 0) {
-                            let html = '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">';
+                                                if (res.success && res.gallery && res.gallery.length > 0) {
+                            const grid = document.createElement('div');
+                            grid.style.display = 'grid';
+                            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                            grid.style.gap = '10px';
                             res.gallery.forEach(img => {
-                                html += `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">`;
+                                const image = document.createElement('img');
+                                image.src = img;
+                                image.style.width = '100%';
+                                image.style.aspectRatio = '1';
+                                image.style.objectFit = 'cover';
+                                image.style.borderRadius = '10px';
+                                image.style.border = '1px solid rgba(255,255,255,0.1)';
+                                grid.appendChild(image);
                             });
-                            html += '</div>';
-                            galleryContainer.innerHTML = html;
+                            galleryContainer.innerHTML = '';
+                            galleryContainer.appendChild(grid);
                         } else {
-                            galleryContainer.innerHTML = '<p style="opacity:0.5; font-size:0.8rem;">Galeri fotoğrafı yok.</p>';
+                            galleryContainer.innerHTML = '<p style="opacity:0.5; font-size:0.8rem;">Galeri foto??raf?? yok.</p>';
                         }
                     })
                     .catch(e => {
@@ -3101,28 +3142,131 @@ unset($su);
             }
             grid.innerHTML = '';
             zenithGifts.forEach(g => {
+
                 const qty = parseInt(zenithGiftInventory[g.id] || 0, 10);
+
                 const icon = giftIconFor(g.feature_key, g.image_url);
+
                 const isUrl = /^https?:/i.test(icon);
+
                 const price = g.price ?? g.coin_price ?? 0;
+
                 const badge = g.feature_name || g.feature_key || '';
-                const priceHtml = qty > 0 
-                    ? `<span style="text-decoration:line-through; opacity:0.6;">◎ ${price}</span> <span style="color:#D4AF37;">Stoktan</span>`
-                    : `◎ ${price}`;
-                const invHtml = qty > 0 ? `<div class="giftInv">Stok: ${qty}</div>` : '';
+
                 const card = document.createElement('button');
+
                 card.type = 'button';
+
                 card.className = 'zenithGiftCard';
+
                 card.dataset.id = g.id;
-                card.innerHTML = `
-                    <div class="giftIcon">${isUrl ? `<img src="${icon}" style="width:40px;height:40px;object-fit:contain;">` : icon}</div>
-                    <div class="giftTitle">${g.label || g.option_label || g.title || 'Öğe'}</div>
-                    <div class="giftFeature">${badge}</div>
-                    <div class="giftPrice ${qty>0 ? 'hasInv' : ''}">${priceHtml}</div>
-                    ${invHtml}
-                `;
+
+            
+
+                const iconWrap = document.createElement('div');
+
+                iconWrap.className = 'giftIcon';
+
+                if (isUrl) {
+
+                    const img = document.createElement('img');
+
+                    img.src = icon;
+
+                    img.style.width = '40px';
+
+                    img.style.height = '40px';
+
+                    img.style.objectFit = 'contain';
+
+                    iconWrap.appendChild(img);
+
+                } else {
+
+                    iconWrap.textContent = icon;
+
+                }
+
+            
+
+                const title = document.createElement('div');
+
+                title.className = 'giftTitle';
+
+                title.textContent = g.label || g.option_label || g.title || 'Oge';
+
+            
+
+                const feature = document.createElement('div');
+
+                feature.className = 'giftFeature';
+
+                feature.textContent = badge;
+
+            
+
+                const priceWrap = document.createElement('div');
+
+                priceWrap.className = 'giftPrice' + (qty > 0 ? ' hasInv' : '');
+
+                if (qty > 0) {
+
+                    const oldPrice = document.createElement('span');
+
+                    oldPrice.style.textDecoration = 'line-through';
+
+                    oldPrice.style.opacity = '0.6';
+
+                    oldPrice.textContent = `? ${price}`;
+
+                    const stockLabel = document.createElement('span');
+
+                    stockLabel.style.color = '#D4AF37';
+
+                    stockLabel.textContent = 'Stoktan';
+
+                    priceWrap.appendChild(oldPrice);
+
+                    priceWrap.appendChild(document.createTextNode(' '));
+
+                    priceWrap.appendChild(stockLabel);
+
+                } else {
+
+                    priceWrap.textContent = `? ${price}`;
+
+                }
+
+            
+
+                card.appendChild(iconWrap);
+
+                card.appendChild(title);
+
+                card.appendChild(feature);
+
+                card.appendChild(priceWrap);
+
+            
+
+                if (qty > 0) {
+
+                    const inv = document.createElement('div');
+
+                    inv.className = 'giftInv';
+
+                    inv.textContent = `Stok: ${qty}`;
+
+                    card.appendChild(inv);
+
+                }
+
+            
+
                 card.onclick = () => selectZenithGift(g.id, qty);
+
                 grid.appendChild(card);
+
             });
         }
 

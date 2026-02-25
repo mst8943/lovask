@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type ChargebackRow = {
     id: string
@@ -14,13 +13,15 @@ type ChargebackRow = {
 }
 
 export default function AdminChargebacksPage() {
-    const supabase = createClient()
     const [rows, setRows] = useState<ChargebackRow[]>([])
 
     const load = useCallback(async () => {
-        const { data } = await supabase.from('chargebacks').select('*').order('created_at', { ascending: false })
-        setRows((data || []) as ChargebackRow[])
-    }, [supabase])
+        const res = await fetch('/api/admin/chargebacks/list', { method: 'POST' })
+        if (res.ok) {
+            const payload = await res.json()
+            setRows((payload.rows || []) as ChargebackRow[])
+        }
+    }, [])
 
     useEffect(() => {
         const id = setTimeout(() => {
@@ -30,7 +31,11 @@ export default function AdminChargebacksPage() {
     }, [load])
 
     const updateStatus = async (id: string, status: string) => {
-        await supabase.from('chargebacks').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+        await fetch('/api/admin/chargebacks/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status }),
+        })
         await load()
     }
 

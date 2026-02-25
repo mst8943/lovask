@@ -1,13 +1,42 @@
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/lib/database.types'
+import type { LastActiveVisibility } from '@/utils/lastActive'
+import type { VerificationType } from '@/services/verificationService'
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type ProfileWithMeta = Profile & {
     is_premium?: boolean
     last_active_at?: string | null
+    last_active_visibility?: LastActiveVisibility
     is_verified?: boolean | null
     compatibility_score?: number | null
     distance_km?: number | null
+    verified_types?: VerificationType[]
+}
+
+const attachLastActiveVisibility = async (userIds: string[], profiles: ProfileWithMeta[], supabase = createClient()) => {
+    if (userIds.length === 0) return
+    try {
+        const { data: session } = await supabase.auth.getSession()
+        const token = session.session?.access_token
+        if (!token) return
+        const res = await fetch('/api/profile/visibility', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ userIds }),
+        })
+        if (!res.ok) return
+        const payload = await res.json()
+        const visibilities = (payload?.visibilities || {}) as Record<string, LastActiveVisibility>
+        for (const profile of profiles) {
+            profile.last_active_visibility = visibilities[profile.id] ?? null
+        }
+    } catch {
+        // Non-blocking
+    }
 }
 
 type RawFeedRow = ProfileWithMeta & {
@@ -114,6 +143,8 @@ export const fetchFeedPage = async (
 
     if (!rpcError && rpcData) {
         const profiles = rpcData as ProfileWithMeta[]
+        const profileIds = profiles.map((p) => p.id).filter(Boolean)
+        await attachLastActiveVisibility(profileIds, profiles, supabase)
         if (profiles.length > 0) {
             const last = profiles[profiles.length - 1]
             const nextCursor = last ? `${last.updated_at}|${last.id}` : null
@@ -146,7 +177,7 @@ export const fetchFeedPage = async (
 
     let query = supabase
         .from('profiles')
-        .select('id,display_name,age,gender,city,bio,photos,interests,is_bot,looking_for_genders,is_verified,updated_at, users:users(id,is_premium,last_active_at)')
+        .select('id,display_name,age,gender,city,location_visibility,bio,photos,interests,is_bot,looking_for_genders,is_verified,updated_at, users:users(id,is_premium,last_active_at)')
         .eq('hide_from_discovery', false)
         .order('updated_at', { ascending: false })
         .limit(pageSize)
@@ -170,7 +201,8 @@ export const fetchFeedPage = async (
     if (filters.heightMax) query = query.lte('height_cm', filters.heightMax)
     if (filters.religion) query = query.eq('religion', filters.religion)
     if (filters.lifestyle) query = query.eq('lifestyle', filters.lifestyle)
-    if (cursor) query = query.lt('updated_at', cursor)
+    const { cursorAt } = parseCursor(cursor)
+    if (cursorAt) query = query.lt('updated_at', cursorAt)
 
     const { data, error } = await query
     if (error) throw error
@@ -187,6 +219,9 @@ export const fetchFeedPage = async (
             users: user ?? null,
         }
     }) as ProfileWithMeta[]
+
+    const profileIds = profiles.map((p) => p.id).filter(Boolean)
+    await attachLastActiveVisibility(profileIds, profiles, supabase)
 
     const filtered = profiles.filter((p) => {
         if (filters.premiumOnly && !p.is_premium) return false

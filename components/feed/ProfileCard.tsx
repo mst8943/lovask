@@ -1,19 +1,29 @@
 ﻿'use client'
-import { Profile } from '@/services/feedService'
+import { ProfileWithMeta } from '@/services/feedService'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Heart, X, MapPin } from 'lucide-react'
+import { Heart, X, MapPin, ShieldCheck, Smartphone, Camera, IdCard, Video } from 'lucide-react'
 import { getProfileAvatar } from '@/utils/avatar'
+import { getLocationLabel } from '@/utils/location'
 import { Button } from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 interface ProfileCardProps {
-    profile: Profile
+    profile: ProfileWithMeta
     onLike: () => void
     onPass: () => void
     disabled?: boolean
 }
 export default function ProfileCard({ profile, onLike, onPass, disabled }: ProfileCardProps) {
     const photoUrl = getProfileAvatar(profile)
+    const verificationMeta: Record<string, { label: string; icon: typeof ShieldCheck }> = {
+        device: { label: 'Cihaz', icon: Smartphone },
+        photo: { label: 'Fotoğraf', icon: Camera },
+        selfie: { label: 'Fotoğraf', icon: Camera },
+        kyc: { label: 'Kimlik', icon: IdCard },
+        video: { label: 'Video', icon: Video },
+        email: { label: 'E-posta', icon: ShieldCheck },
+    }
+    const verifiedTypes = Array.from(new Set((profile.verified_types || []).map((t) => (t === 'selfie' ? 'photo' : t))))
     return (
         <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
@@ -36,10 +46,27 @@ export default function ProfileCard({ profile, onLike, onPass, disabled }: Profi
                     <h2 className="text-3xl font-bold text-white flex items-end gap-2">
                         {profile.display_name}
                         <span className="text-xl font-normal opacity-80">{profile.age}</span>
+                        {verifiedTypes.length > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-300">
+                                {verifiedTypes.slice(0, 4).map((type) => {
+                                    const meta = verificationMeta[type]
+                                    const Icon = meta?.icon || ShieldCheck
+                                    return (
+                                        <span key={type} title={meta?.label || type}>
+                                            <Icon size={16} />
+                                        </span>
+                                    )
+                                })}
+                            </span>
+                        ) : profile.is_verified ? (
+                            <span title="Doğrulanmış">
+                                <ShieldCheck size={18} className="text-emerald-300" />
+                            </span>
+                        ) : null}
                     </h2>
                     <div className="flex items-center gap-1 text-gray-300 text-sm mt-1">
                         <MapPin size={14} />
-                        <span>{profile.city}</span>
+                        <span>{getLocationLabel(profile)}</span>
                     </div>
                     {profile.bio && (
                         <p className="text-gray-300 text-sm mt-3 line-clamp-2">

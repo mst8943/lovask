@@ -356,7 +356,7 @@ export default function SwipePage() {
 
             } else {
 
-                    setConfirmMessage('S\u00fcper Be\u011feni \u00fccretli: 10 jeton. Devam edilsin mi?')
+                setConfirmMessage('S\u00fcper Be\u011feni \u00fccretli: 10 jeton. Devam edilsin mi?')
 
                 setConfirmText('Süper Beğeni')
 
@@ -608,13 +608,13 @@ export default function SwipePage() {
 
         return (
 
-            <div className="flex flex-col items-center justify-center text-center space-y-4 p-8 glass-panel rounded-3xl min-h-[50vh]">
+            <div className="flex flex-col items-center justify-center text-center space-y-4 p-8 bg-surface-1 border border-surface-2 rounded-[var(--radius-xl)] min-h-[50vh] shadow-[var(--shadow-md)]">
 
                 <div className="text-6xl">😴</div>
 
-                <h3 className="text-xl font-bold">Yeni profil yok</h3>
+                <h3 className="text-xl font-bold text-text-primary">Yeni profil yok</h3>
 
-                <p className="text-gray-400">Biraz sonra tekrar dene.</p>
+                <p className="text-text-secondary mt-1">Biraz sonra tekrar dene.</p>
 
                 <Button
 
@@ -626,9 +626,9 @@ export default function SwipePage() {
 
                     }}
 
-                    variant="secondary"
+                    variant="primary"
 
-                    className="rounded-full"
+                    className="mt-4"
 
                 >
 
@@ -718,7 +718,7 @@ export default function SwipePage() {
 
                             }}
 
-                            className="absolute inset-0 rounded-3xl overflow-hidden glass-card shadow-2xl cursor-grab active:cursor-grabbing"
+                            className="absolute inset-0 rounded-[var(--radius-xl)] bg-surface-1 border border-surface-2 overflow-hidden shadow-[var(--shadow-md)] cursor-grab active:cursor-grabbing"
 
                         >
 
@@ -748,76 +748,53 @@ export default function SwipePage() {
 
 
 
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
+                            <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
 
 
 
                             <div className="absolute bottom-0 left-0 right-0 p-6 space-y-2 z-20 pointer-events-none">
 
-                                <h2 className="text-3xl font-bold text-white flex items-end gap-2">
+                                <h2 className="text-3xl font-bold force-white flex items-end gap-2 drop-shadow-md">
 
                                     {current.display_name}
 
-                                    <span className="text-xl font-normal opacity-80">{current.age}</span>
+                                    <span className="text-xl font-normal opacity-90 force-white leading-none mb-0.5">{current.age}</span>
 
                                 </h2>
 
-                                <div className="text-gray-300 text-sm">{current.city}</div>
+                                <div className="force-white-80 font-medium text-sm drop-shadow-sm">{current.city}</div>
 
                                 {current.bio && (
 
-                                    <p className="text-gray-300 text-sm line-clamp-2">
+                                    <p className="force-white-80 text-sm line-clamp-2 drop-shadow-sm mt-1">
 
                                         {current.bio}
 
                                     </p>
 
                                 )}
-
                             </div>
-
                         </motion.div>
-
                     )}
-
                 </AnimatePresence>
-
             </div>
 
-
-
             <div className="flex items-center justify-center gap-2 text-xs py-1">
-
                 <Button
-
                     onClick={async () => {
-
                         if (!current) return
-
                         await toggleFavorite(current.id)
-
                         toast.push(isFavorited ? 'Favoriden çıkarıldı.' : 'Favorilere eklendi.', 'success')
-
                     }}
-
                     variant="secondary"
-
                     size="sm"
-
                     className="rounded-full px-3"
-
                 >
-
                     <Heart size={14} className={isFavorited ? 'fill-current text-pink-400' : ''} />
-
                     <span className="ml-1">{isFavorited ? 'Favoride' : 'Favori'}</span>
-
                 </Button>
-
                 <Link
-
                     href={`/profiles/${current.id}`}
-
                     className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 transition text-xs border border-white/10"
 
                 >
@@ -848,9 +825,7 @@ export default function SwipePage() {
 
             </div>
 
-
-
-            <div className="flex items-center justify-center gap-4 py-4 shrink-0 border-t border-white/10">
+            <div className="flex items-center justify-center gap-4 py-4 shrink-0 bg-transparent mt-2">
 
                 <Button
 
@@ -858,11 +833,11 @@ export default function SwipePage() {
 
                     disabled={rewinding}
 
-                    variant="secondary"
+                    variant="outline"
 
                     size="icon"
 
-                    className="h-14 w-14 rounded-full border-white/10 text-gray-300 hover:text-white"
+                    className="h-14 w-14 rounded-full border-surface-2 bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-surface-2"
 
                     title="Geri Al"
 
@@ -882,7 +857,7 @@ export default function SwipePage() {
 
                     size="icon"
 
-                    className="h-16 w-16 rounded-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-400 hover:text-red-500"
+                    className="h-16 w-16 rounded-full border-surface-2 bg-surface-1 text-status-destructive hover:bg-status-destructive/10 hover:border-status-destructive"
 
                     title="Geç"
 
@@ -902,7 +877,7 @@ export default function SwipePage() {
 
                     size="icon"
 
-                    className="h-14 w-14 rounded-full border-blue-400/40 text-blue-300 bg-blue-500/10 hover:bg-blue-500/30 hover:border-blue-400 hover:text-blue-100"
+                    className="h-14 w-14 rounded-full border-surface-2 bg-surface-1 text-brand-accent hover:bg-brand-accent/10 hover:border-brand-accent"
 
                     title="Süper Beğeni"
 
@@ -918,17 +893,17 @@ export default function SwipePage() {
 
                     onClick={() => handleSwipe('right')}
 
-                    variant="default"
+                    variant="primary"
 
                     size="icon"
 
-                    className="h-16 w-16 rounded-full shadow-lg shadow-pink-500/40 hover:scale-105 transition-transform"
+                    className="h-16 w-16 rounded-full shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50"
 
                     title="Beğen"
 
                 >
 
-                    <Heart size={28} fill="currentColor" />
+                    <Heart size={28} className="fill-current" />
 
                 </Button>
 
@@ -978,7 +953,7 @@ export default function SwipePage() {
 
                     setConfirmCancelAction(null)
 
-            setConfirmCancelText('Vazge\u00e7')
+                    setConfirmCancelText('Vazge\u00e7')
 
                 }}
 
@@ -1000,7 +975,7 @@ export default function SwipePage() {
 
                     setConfirmCancelAction(null)
 
-            setConfirmCancelText('Vazge\u00e7')
+                    setConfirmCancelText('Vazge\u00e7')
 
                     if (action) await action()
 

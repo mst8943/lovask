@@ -777,8 +777,8 @@ as $$
   ),
   setting as (
     select coalesce(us.message_request_mode, 'open') as mode
-    from public.user_settings us
-    join other o on o.other_id = us.user_id
+    from other o
+    left join public.user_settings us on us.user_id = o.other_id
   ),
   sender_verified as (
     select coalesce(p.is_verified, false) as ok

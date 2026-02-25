@@ -30,6 +30,21 @@ export const fetchMyVerifications = async (userId: string) => {
     return data as VerificationRow[]
 }
 
+export const fetchPublicVerifications = async (userId: string) => {
+    const supabase = createClient()
+    const { data, error } = await supabase.rpc('get_public_verifications', { p_user_id: userId })
+    if (error) throw error
+    return (data || []) as Array<{ user_id: string; type: VerificationType }>
+}
+
+export const fetchPublicVerificationsBatch = async (userIds: string[]) => {
+    if (userIds.length === 0) return []
+    const supabase = createClient()
+    const { data, error } = await supabase.rpc('get_public_verifications_batch', { p_user_ids: userIds })
+    if (error) throw error
+    return (data || []) as Array<{ user_id: string; type: VerificationType }>
+}
+
 export const createVerification = async (payload: {
     user_id: string
     type: VerificationType

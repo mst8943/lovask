@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { rateLimit, rateLimitHeaders } from '@/lib/rateLimit'
 
 const REFERRER_BONUS = 50
 const REFEREE_BONUS = 25
@@ -10,6 +11,11 @@ export async function POST(req: Request) {
         const supabase = await createClient()
         const { data: auth } = await supabase.auth.getUser()
         if (!auth.user) return new NextResponse('Unauthorized', { status: 401 })
+
+        const rate = rateLimit(`referrals-apply:${auth.user.id}`, 6, 60_000)
+        if (!rate.ok) {
+            return new NextResponse('Too many requests', { status: 429, headers: rateLimitHeaders(6, rate) })
+        }
 
         const body = await req.json().catch(() => ({}))
         const code = String(body?.code || '').trim().toUpperCase()

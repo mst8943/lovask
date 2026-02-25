@@ -88,9 +88,10 @@ export default function NotificationSettingsPage() {
             .upsert({
                 user_id: user.id,
                 ...settings,
-            })
+            }, { onConflict: 'user_id' })
 
         if (error) setError(error.message)
+        if (!error) toast.push('Kaydedildi', 'success')
         setSaving(false)
     }
 

@@ -1,7 +1,6 @@
 ﻿'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCallback, useEffect, useState } from 'react'
 
 type MatchRow = {
     id: string
@@ -28,7 +27,6 @@ type MessageRow = {
 }
 
 export default function AdminBotChatsPage() {
-    const supabase = useMemo(() => createClient(), [])
     const [matches, setMatches] = useState<MatchRow[]>([])
     const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({})
     const [selectedMatch, setSelectedMatch] = useState<MatchRow | null>(null)
@@ -43,72 +41,32 @@ export default function AdminBotChatsPage() {
         setLoading(true)
         setError(null)
         try {
-            const { data: bots } = await supabase
-                .from('profiles')
-                .select('id,display_name,photos,is_bot')
-                .eq('is_bot', true)
-
-            const botIdList = (bots || []).map((b) => b.id)
-            if (botIdList.length === 0) {
-                setMatches([])
-                setProfiles({})
-                setLoading(false)
-                return
-            }
-
-            const { data: matchRows, error: matchError } = await supabase
-                .from('matches')
-                .select('*')
-                .or(`user_a.in.(${botIdList.join(',')}),user_b.in.(${botIdList.join(',')})`)
-                .order('created_at', { ascending: false })
-
-            if (matchError) throw matchError
-            const rows = matchRows || []
-
-            const ids = new Set<string>()
-            botIdList.forEach((id) => ids.add(id))
-            rows.forEach((m) => {
-                ids.add(m.user_a)
-                ids.add(m.user_b)
-            })
-
-            const { data: allProfiles } = await supabase
-                .from('profiles')
-                .select('id,display_name,photos,is_bot')
-                .in('id', Array.from(ids))
-
-            const map: Record<string, ProfileRow> = {}
-            for (const p of allProfiles || []) map[p.id] = p as ProfileRow
-
-            setProfiles(map)
-            setMatches(rows)
+            const res = await fetch('/api/admin/bot-chats/list', { method: 'POST' })
+            if (!res.ok) throw new Error(await res.text())
+            const payload = await res.json()
+            setProfiles((payload.profiles || {}) as Record<string, ProfileRow>)
+            setMatches((payload.matches || []) as MatchRow[])
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to load automation matches.')
         } finally {
             setLoading(false)
         }
-    }, [supabase])
+    }, [])
 
     const loadMessages = async (matchId: string) => {
         setError(null)
-        const { data, error } = await supabase
-            .from('messages')
-            .select('*')
-            .eq('match_id', matchId)
-            .order('created_at', { ascending: true })
-
-        if (error) {
-            setError(error.message)
+        const res = await fetch('/api/admin/bot-chats/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ match_id: matchId }),
+        })
+        if (!res.ok) {
+            setError(await res.text())
             return
         }
-        setMessages(data || [])
-
-        const { data: override } = await supabase
-            .from('bot_chat_overrides')
-            .select('ai_enabled')
-            .eq('match_id', matchId)
-            .maybeSingle()
-        setAiEnabled(override?.ai_enabled !== false)
+        const payload = await res.json()
+        setMessages(payload.messages || [])
+        setAiEnabled(payload.ai_enabled !== false)
     }
 
     const handleSelect = async (match: MatchRow) => {

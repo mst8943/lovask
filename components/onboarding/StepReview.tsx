@@ -36,6 +36,7 @@ export default function StepReview() {
                 throw new Error(message || 'Profil kaydedilemedi.')
             }
 
+            toast.push('Kaydedildi', 'success')
             router.push('/feed')
         } catch (error: unknown) {
             console.error('Error saving profile: ', error)

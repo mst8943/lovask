@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, User, Settings, Shield, Heart, Wallet, Eye, BarChart2, Gift, Bell, Plus, X, Star } from 'lucide-react'
+import { LogOut, User, Settings, Shield, Heart, Wallet, Eye, BarChart2, Gift, Bell, Plus, X, Star, ShieldCheck, Smartphone, Camera, IdCard, Video } from 'lucide-react'
 import { useEconomy } from '@/hooks/useEconomy'
 import { FEATURE_ITEMS } from '@/lib/featureFlags'
 import { useEffect, useMemo, useState } from 'react'
@@ -13,6 +13,8 @@ import { getProfileAvatar } from '@/utils/avatar'
 import Image from 'next/image'
 import { useToast } from '@/components/ui/Toast'
 import { Button } from '@/components/ui/Button'
+import { fetchPublicVerifications } from '@/services/verificationService'
+import type { VerificationType } from '@/services/verificationService'
 
 export default function ProfilePage() {
     const { user, setSession } = useAuthStore()
@@ -37,6 +39,7 @@ export default function ProfilePage() {
     const [pendingStoryPreview, setPendingStoryPreview] = useState<string | null>(null)
     const [historyLoading, setHistoryLoading] = useState(false)
     const [historyFilter, setHistoryFilter] = useState<'all' | 'payments' | 'coin_spend'>('all')
+    const [verifiedTypes, setVerifiedTypes] = useState<VerificationType[]>([])
     const [historyRows, setHistoryRows] = useState<Array<{
         id: string
         created_at: string
@@ -92,6 +95,10 @@ export default function ProfilePage() {
             } catch {
                 setStories([])
             }
+
+            const verificationRows = await fetchPublicVerifications(user.id)
+            const types = Array.from(new Set((verificationRows || []).map((row) => row.type)))
+            setVerifiedTypes(types)
         }
         loadStoryContext()
     }, [user, supabase])
@@ -280,6 +287,19 @@ export default function ProfilePage() {
     const myAvatar = profileData ? getProfileAvatar(profileData) : '/placeholder-user.jpg'
     const displayName = profileData?.display_name || user.email || 'Profil'
     const firstStory = stories[0] || null
+    const verificationMeta: Record<VerificationType, { label: string; icon: typeof ShieldCheck }> = {
+        device: { label: 'Cihaz Doğrulama', icon: Smartphone },
+        photo: { label: 'Fotoğraf Doğrulama', icon: Camera },
+        selfie: { label: 'Fotoğraf Doğrulama', icon: Camera },
+        kyc: { label: 'Kimlik Doğrulama', icon: IdCard },
+        video: { label: 'Video Doğrulama', icon: Video },
+        email: { label: 'E-posta Doğrulama', icon: ShieldCheck },
+    }
+    const visibleVerifications = Array.from(new Set(
+        verifiedTypes
+            .map((t) => (t === 'selfie' ? 'photo' : t))
+            .filter((t) => t !== 'email')
+    ))
 
     return (
         <div className="profile-shell space-y-6 pb-8">
@@ -461,6 +481,29 @@ export default function ProfilePage() {
             </div>
 
             <NotificationsBadge />
+
+            <div className="glass-panel p-4 rounded-2xl">
+                <div className="flex items-center gap-2 text-sm font-semibold mb-3">
+                    <ShieldCheck size={16} className="text-emerald-400" />
+                    Doğrulamalar
+                </div>
+                {visibleVerifications.length === 0 ? (
+                    <div className="text-xs text-gray-400">Henüz doğrulama yok.</div>
+                ) : (
+                    <div className="flex flex-wrap gap-2">
+                        {visibleVerifications.map((type) => {
+                            const meta = verificationMeta[type]
+                            const Icon = meta?.icon || ShieldCheck
+                            return (
+                                <span key={type} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                    <Icon size={12} />
+                                    {meta?.label || type}
+                                </span>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
 
             <div className="glass-panel p-4 rounded-2xl">
                 <div className="flex items-center gap-2 text-sm font-semibold mb-3">

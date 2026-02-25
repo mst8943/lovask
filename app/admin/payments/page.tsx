@@ -1,9 +1,7 @@
 ﻿'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCallback, useEffect, useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
 export default function AdminPaymentsPage() {
-    const supabase = useMemo(() => createClient(), [])
     const [loading, setLoading] = useState(true)
     const [rows, setRows] = useState<Array<{
         id: string
@@ -14,18 +12,19 @@ export default function AdminPaymentsPage() {
         status: 'pending' | 'paid' | 'failed' | 'canceled' | string
         created_at: string
         updated_at?: string | null
+        metadata?: Record<string, unknown> | null
     }>>([])
     const [savingId, setSavingId] = useState<string | null>(null)
     const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'paid' | 'failed' | 'canceled' | 'review'>('all')
     const load = useCallback(async () => {
         setLoading(true)
-        const { data } = await supabase
-            .from('payments')
-            .select('*')
-            .order('created_at', { ascending: false })
-        setRows(data || [])
+        const res = await fetch('/api/admin/payments/list', { method: 'POST' })
+        if (res.ok) {
+            const payload = await res.json()
+            setRows(payload.rows || [])
+        }
         setLoading(false)
-    }, [supabase])
+    }, [])
     useEffect(() => {
         const id = setTimeout(() => {
             void load()
@@ -72,7 +71,11 @@ export default function AdminPaymentsPage() {
                                 <div className="font-semibold">{r.kind}</div>
                                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">{r.provider}</div>
                             </div>
-                            <div className="text-sm text-slate-600">{r.amount} {r.currency}</div>
+                            <div className="text-sm text-slate-600">
+                                {r.amount} {r.currency}
+                                {r.kind === 'coins' && r.metadata?.coins ? ` · Jeton: ${r.metadata.coins}` : ''}
+                                {r.kind === 'premium' && r.metadata?.months ? ` · Ay: ${r.metadata.months}` : ''}
+                            </div>
                             <div className="text-xs text-slate-500 flex items-center gap-2">
                                 <span>Durum:</span>
                                 <select
@@ -89,12 +92,10 @@ export default function AdminPaymentsPage() {
                                 <button
                                     onClick={async () => {
                                         setSavingId(r.id)
-                                        await supabase.from('payments').update({ status: r.status, updated_at: new Date().toISOString() }).eq('id', r.id)
-                                        await supabase.from('admin_audit_logs').insert({
-                                            action: 'payment_status_update',
-                                            target_table: 'payments',
-                                            target_id: r.id,
-                                            metadata: { status: r.status },
+                                        await fetch('/api/admin/payments/update', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ id: r.id, status: r.status }),
                                         })
                                         setSavingId(null)
                                     }}

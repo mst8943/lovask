@@ -20,6 +20,7 @@ type RawEventParticipant = {
         display_name: string | null
         age: number | null
         city: string | null
+        location_visibility?: 'public' | 'approx' | 'hidden' | null
         photos: string[] | null
         is_verified: boolean | null
         is_bot: boolean | null
@@ -28,6 +29,7 @@ type RawEventParticipant = {
         display_name: string | null
         age: number | null
         city: string | null
+        location_visibility?: 'public' | 'approx' | 'hidden' | null
         photos: string[] | null
         is_verified: boolean | null
         is_bot: boolean | null
@@ -72,7 +74,7 @@ export const fetchEventParticipants = async (eventId: string) => {
     const supabase = createClient()
     const { data, error } = await supabase
         .from('event_participants')
-        .select('user_id, status, created_at, profiles:profiles(id,display_name,age,city,photos,is_verified,is_bot)')
+        .select('user_id, status, created_at, profiles:profiles(id,display_name,age,city,location_visibility,photos,is_verified,is_bot)')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false })
     if (error) throw error
@@ -88,6 +90,7 @@ export const fetchEventParticipants = async (eventId: string) => {
             display_name: string | null
             age: number | null
             city: string | null
+            location_visibility?: 'public' | 'approx' | 'hidden' | null
             photos: string[] | null
             is_verified: boolean | null
             is_bot: boolean | null

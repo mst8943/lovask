@@ -1,7 +1,5 @@
 ﻿'use client'
-import { useEffect, useMemo, useState } from 'react'
-import { fetchReports, resolveReport, banUser } from '@/services/moderationService'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import Spinner from '@/components/ui/Spinner'
 import { usePresenceStore } from '@/store/usePresenceStore'
 type ReportRow = {
@@ -52,31 +50,39 @@ export default function ReportsPage() {
     const [hasNoteOnly, setHasNoteOnly] = useState(false)
     const [slaHours, setSlaHours] = useState(SLA_HOURS)
     const [now, setNow] = useState(Date.now())
-    const supabase = createClient()
     const onlineUsers = usePresenceStore((s) => s.onlineUsers)
-    const load = async () => {
+    const postJson = useCallback(async (url: string, body?: Record<string, unknown>) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        return res.json()
+    }, [])
+    const load = useCallback(async () => {
         setLoading(true)
         setError(null)
         try {
-            const data = await fetchReports()
-            setReports(data || [])
+            const payload = await postJson('/api/admin/reports/list')
+            setReports(payload.rows || [])
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Bir hata olustu.'
             setError(message)
         } finally {
             setLoading(false)
         }
-    }
+    }, [postJson])
     useEffect(() => {
         load()
-    }, [])
+    }, [load])
     useEffect(() => {
         const loadSla = async () => {
-            const { data } = await supabase.from('admin_sla_settings').select('sla_hours').eq('queue', 'reports').maybeSingle()
-            if (data?.sla_hours) setSlaHours(data.sla_hours)
+            const payload = await postJson('/api/admin/sla', { queue: 'reports' })
+            if (payload?.sla_hours) setSlaHours(payload.sla_hours)
         }
         void loadSla()
-    }, [supabase])
+    }, [postJson])
     useEffect(() => {
         const id = setTimeout(() => setNow(Date.now()), 0)
         return () => clearTimeout(id)
@@ -114,7 +120,7 @@ export default function ReportsPage() {
         if (selectedIds.length === 0) return
         setActionId(selectedIds[0])
         for (const id of selectedIds) {
-            await resolveReport(id, status)
+            await postJson('/api/admin/reports/resolve', { id, status })
         }
         await load()
         setSelected({})
@@ -148,27 +154,12 @@ export default function ReportsPage() {
     }
     const handleResolve = async (id: string, status: 'resolved' | 'dismissed', reportedId?: string) => {
         setActionId(id)
-        await resolveReport(id, status)
-        if (reportedId) {
-            await supabase.from('admin_audit_logs').insert({
-                action: `report_${status}`,
-                target_table: 'reports',
-                target_id: id,
-                metadata: { reported_id: reportedId, note: notes[id] || null },
-            })
-            await supabase.from('notifications').insert({
-                user_id: reportedId,
-                type: 'report_resolved',
-                payload: { title: 'Rapor sonucu', body: status === 'resolved' ? 'Raporun değerlendirildi.' : 'Rapor reddedildi.' },
-            })
-        }
+        await postJson('/api/admin/reports/resolve', { id, status, reported_id: reportedId, note: notes[id] || null })
         await load()
         setActionId(null)
     }
     const logPlaybook = async (id: string, step: string, checked: boolean) => {
-        const { data } = await supabase.auth.getUser()
-        await supabase.from('admin_audit_logs').insert({
-            admin_id: data.user?.id || null,
+        await postJson('/api/admin/audit/log', {
             action: 'playbook_step',
             target_table: 'reports',
             target_id: id,
@@ -177,19 +168,8 @@ export default function ReportsPage() {
     }
     const handleBan = async (userId: string, reportId: string) => {
         setActionId(reportId)
-        await banUser(userId, 'Rapor üzerinden banlandı')
-        await resolveReport(reportId, 'resolved')
-        await supabase.from('admin_audit_logs').insert({
-            action: 'ban_user',
-            target_table: 'users',
-            target_id: userId,
-            metadata: { report_id: reportId, note: notes[reportId] || null },
-        })
-        await supabase.from('notifications').insert({
-            user_id: userId,
-            type: 'ban',
-            payload: { title: 'Hesap banlandı', body: 'Rapor sonucu hesabın geçici/kalıcı olarak banlandı.' },
-        })
+        await postJson('/api/admin/reports/ban', { user_id: userId, reason: 'Rapor üzerinden banlandı', report_id: reportId, note: notes[reportId] || null })
+        await postJson('/api/admin/reports/resolve', { id: reportId, status: 'resolved', reported_id: userId })
         await load()
         setActionId(null)
     }

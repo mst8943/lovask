@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit, rateLimitHeaders } from '@/lib/rateLimit'
 
 export async function POST(req: Request) {
     try {
         const supabase = await createClient()
         const { data: auth } = await supabase.auth.getUser()
         if (!auth.user) return new NextResponse('Unauthorized', { status: 401 })
+
+        const rate = rateLimit(`calls-signal:${auth.user.id}`, 120, 60_000)
+        if (!rate.ok) {
+            return new NextResponse('Too many requests', { status: 429, headers: rateLimitHeaders(120, rate) })
+        }
 
         const body = await req.json()
         const { callId, toUserId, signalType, payload } = body || {}

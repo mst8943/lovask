@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import BoostsBar from '@/components/feed/BoostsBar'
 import Spinner from '@/components/ui/Spinner'
+import { CITY_OPTIONS } from '@/utils/cities'
 
 export default function FeedPage() {
     const {
@@ -108,8 +109,15 @@ export default function FeedPage() {
     useEffect(() => {
         if (!user || compatibilityRun) return
         const id = setTimeout(() => {
-            fetch('/api/compatibility/recompute', { method: 'POST' })
-                .finally(() => setCompatibilityRun(true))
+            const run = async () => {
+                const { data: session } = await supabase.auth.getSession()
+                const token = session.session?.access_token
+                await fetch('/api/compatibility/recompute', {
+                    method: 'POST',
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                })
+            }
+            run().finally(() => setCompatibilityRun(true))
         }, 0)
         return () => clearTimeout(id)
     }, [compatibilityRun, user])
@@ -638,7 +646,16 @@ export default function FeedPage() {
 
                             <div>
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Şehir</label>
-                                <Input type="text" value={filters.city} onChange={(e) => filters.setFilter('city', e.target.value)} className="feed-input mt-3 bg-white/5 border-white/10 text-[var(--foreground)] rounded-xl focus:border-pink-500/50 focus:ring-0" placeholder="Şehir giriniz..." />
+                                <select
+                                    value={filters.city}
+                                    onChange={(e) => filters.setFilter('city', e.target.value)}
+                                    className="feed-input mt-3 bg-white/5 border-white/10 text-[var(--foreground)] rounded-xl focus:border-pink-500/50 focus:ring-0 appearance-none px-4 py-3"
+                                >
+                                    <option value="" className="bg-[var(--background)] text-[var(--foreground)]">Farketmez</option>
+                                    {CITY_OPTIONS.map((city) => (
+                                        <option key={city} value={city} className="bg-[var(--background)] text-[var(--foreground)]">{city}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>

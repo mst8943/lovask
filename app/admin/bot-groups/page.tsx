@@ -1,6 +1,5 @@
 ﻿'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCallback, useEffect, useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
 type Group = {
     id: string
@@ -17,6 +16,17 @@ type Group = {
     profile_rotation_minutes: number | null
     active_hours: number[] | null
     created_at?: string | null
+}
+const postJson = async <T,>(url: string, payload?: Record<string, unknown>) => {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {}),
+    })
+    if (!res.ok) {
+        throw new Error(await res.text())
+    }
+    return (await res.json()) as T
 }
 export default function BotGroupsPage() {
     const [groups, setGroups] = useState<Group[]>([])
@@ -36,14 +46,17 @@ export default function BotGroupsPage() {
         profile_rotation_minutes: 0,
         active_hours_raw: '',
     })
-    const supabase = useMemo(() => createClient(), [])
     const load = useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase.from('bot_groups').select('*').order('created_at', { ascending: false })
-        if (error) setError(error.message)
-        if (data) setGroups(data as Group[])
+        try {
+            const payload = await postJson<{ rows: Group[] }>('/api/admin/bot-groups/list')
+            setGroups(payload.rows || [])
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Bir hata oluştu.'
+            setError(message)
+        }
         setLoading(false)
-    }, [supabase])
+    }, [])
     useEffect(() => {
         const id = setTimeout(() => {
             void load()
@@ -60,8 +73,12 @@ export default function BotGroupsPage() {
         const { active_hours_raw: _activeHoursRaw, ...rest } = form
         void _activeHoursRaw
         const payload: Record<string, unknown> = { ...rest, active_hours: hours }
-        const { error } = await supabase.from('bot_groups').insert(payload)
-        if (error) setError(error.message)
+        try {
+            await postJson('/api/admin/bot-groups/create', payload)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Bir hata oluştu.'
+            setError(message)
+        }
         await load()
     }
     if (loading) {
@@ -223,7 +240,6 @@ export default function BotGroupsPage() {
     )
 }
 function GroupRow({ group, onUpdated }: { group: Group; onUpdated: () => void }) {
-    const supabase = createClient()
     const [editing, setEditing] = useState(false)
     const [state, setState] = useState({
         name: group.name || '',
@@ -249,7 +265,7 @@ function GroupRow({ group, onUpdated }: { group: Group; onUpdated: () => void })
         const { active_hours_raw: _activeHoursRaw, ...rest } = state
         void _activeHoursRaw
         const payload: Record<string, unknown> = { ...rest, active_hours: hours }
-        await supabase.from('bot_groups').update(payload).eq('id', group.id)
+        await postJson('/api/admin/bot-groups/update', { id: group.id, payload })
         setEditing(false)
         onUpdated()
     }

@@ -10,6 +10,11 @@ export async function POST(req: NextRequest) {
     if (!auth.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const admin = createAdminClient()
+    const { data: userData } = await admin.from('users').select('role').eq('id', auth.user.id).maybeSingle()
+    if (userData?.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || ''
     const ua = req.headers.get('user-agent') || ''
     const { path } = await req.json().catch(() => ({ path: null }))

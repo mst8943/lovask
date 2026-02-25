@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { fetchFeedPage, likeUser, passUser, FeedFilters, ProfileWithMeta } from '@/services/feedService'
+import { fetchPublicVerificationsBatch } from '@/services/verificationService'
 import { fetchFavoriteIds, toggleFavorite } from '@/services/favoritesService'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useFeedFilters } from '@/store/useFeedFilters'
@@ -113,10 +115,31 @@ export function useFeedList() {
         },
     })
 
-    const profiles = feedQuery.data?.pages.flatMap((p) => p.profiles) || []
+    const profiles = useMemo(() => feedQuery.data?.pages.flatMap((p) => p.profiles) || [], [feedQuery.data?.pages])
+    const profileIds = useMemo(() => profiles.map((p) => p.id), [profiles])
+    const verificationsQuery = useQuery({
+        queryKey: ['public-verifications', profileIds],
+        queryFn: () => fetchPublicVerificationsBatch(profileIds),
+        enabled: profileIds.length > 0,
+    })
+    const verifiedMap = useMemo(() => {
+        const map = new Map<string, string[]>()
+        for (const row of verificationsQuery.data || []) {
+            const list = map.get(row.user_id) || []
+            list.push(row.type)
+            map.set(row.user_id, list)
+        }
+        return map
+    }, [verificationsQuery.data])
+    const profilesWithVerifications = useMemo(() => (
+        profiles.map((p) => ({
+            ...p,
+            verified_types: verifiedMap.get(p.id) || p.verified_types || [],
+        }))
+    ), [profiles, verifiedMap])
 
     return {
-        profiles,
+        profiles: profilesWithVerifications,
         favorites: favoritesQuery.data || [],
         isLoading: feedQuery.isLoading,
         isFetchingNext: feedQuery.isFetchingNextPage,

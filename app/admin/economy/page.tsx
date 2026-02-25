@@ -14,9 +14,11 @@ export default function AdminEconomyPage() {
     const [weeklySpend, setWeeklySpend] = useState(0)
     const [topSpenders, setTopSpenders] = useState<Array<{ user_id: string; amount: number }>>([])
     const load = useCallback(async () => {
-        setLoading(true)
-        const { data } = await supabase.rpc('admin_economy_summary')
-        const row = Array.isArray(data) ? data[0] : data
+        const { data, error } = await supabase.rpc('admin_economy_summary')
+        if (error) {
+            console.error('admin_economy_summary error:', error)
+        }
+        const row = Array.isArray(data) ? data[0] : (data || {})
         setCoinsTotal(Number(row?.coins_total || 0))
         setPremiumCount(Number(row?.premium_count || 0))
         setPendingTransfers(Number(row?.pending_transfers || 0))

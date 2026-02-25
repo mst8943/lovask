@@ -7,6 +7,10 @@ type DeferredPrompt = {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>
 }
 
+const INSTALL_PROMPT_COOLDOWN_MS = 10 * 60 * 1000
+const INSTALL_PROMPT_STORAGE_KEY = "lovask.install_prompt_last_shown"
+const INSTALL_PROMPT_SESSION_KEY = "lovask.install_prompt_last_shown_session"
+
 const isIos = () => {
   if (typeof window === "undefined") return false
   return /iphone|ipad|ipod/i.test(window.navigator.userAgent)
@@ -24,11 +28,28 @@ export default function InstallPrompt() {
   const [ios] = useState(() => isIos())
   const canShow = useMemo(() => !isStandalone(), [])
 
+  const canShowWithCooldown = () => {
+    if (typeof window === "undefined") return false
+    const lastLocal = Number(window.localStorage.getItem(INSTALL_PROMPT_STORAGE_KEY) || 0)
+    const lastSession = Number(window.sessionStorage.getItem(INSTALL_PROMPT_SESSION_KEY) || 0)
+    const last = Math.max(lastLocal, lastSession)
+    return Date.now() - last >= INSTALL_PROMPT_COOLDOWN_MS
+  }
+
+  const markShown = () => {
+    if (typeof window === "undefined") return
+    const now = String(Date.now())
+    window.localStorage.setItem(INSTALL_PROMPT_STORAGE_KEY, now)
+    window.sessionStorage.setItem(INSTALL_PROMPT_SESSION_KEY, now)
+  }
+
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault()
+      if (!canShowWithCooldown()) return
       setDeferred(e as unknown as DeferredPrompt)
       setOpen(true)
+      markShown()
     }
     window.addEventListener("beforeinstallprompt", handler)
     return () => window.removeEventListener("beforeinstallprompt", handler)
@@ -36,7 +57,11 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     if (!ios || !canShow) return
-    const timer = setTimeout(() => setOpen(true), 1200)
+    if (!canShowWithCooldown()) return
+    const timer = setTimeout(() => {
+      setOpen(true)
+      markShown()
+    }, 1200)
     return () => clearTimeout(timer)
   }, [ios, canShow])
 

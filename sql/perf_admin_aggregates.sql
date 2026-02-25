@@ -206,15 +206,15 @@ begin
 
   return query
   select
-    (select coalesce(sum(coin_balance),0) from public.users),
+    (select coalesce(sum(coin_balance),0)::bigint from public.users),
     (select count(*) from public.users where is_premium = true)::int,
     (select count(*) from public.bank_transfers where status = 'pending')::int,
-    (select coalesce(sum(abs(amount)),0) from public.transactions where amount < 0 and created_at >= day_ts),
-    (select coalesce(sum(amount),0) from public.transactions where amount > 0 and created_at >= day_ts),
-    (select coalesce(sum(abs(amount)),0) from public.transactions where amount < 0 and created_at >= week_ts),
+    (select coalesce(sum(abs(amount)),0)::numeric from public.transactions where amount < 0 and created_at >= day_ts),
+    (select coalesce(sum(amount),0)::numeric from public.transactions where amount > 0 and created_at >= day_ts),
+    (select coalesce(sum(abs(amount)),0)::numeric from public.transactions where amount < 0 and created_at >= week_ts),
     (select coalesce(jsonb_agg(row_to_json(x)), '[]'::jsonb)
      from (
-        select user_id, sum(abs(amount)) as amount
+        select user_id, sum(abs(amount))::numeric as amount
         from public.transactions
         where amount < 0 and created_at >= week_ts
         group by user_id

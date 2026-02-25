@@ -40,6 +40,24 @@ export async function POST() {
             }
         }
 
+        // Ensure bot user_settings rows exist (prevents RLS on message send)
+        const { data: botIds } = await admin
+            .from('profiles')
+            .select('id')
+            .eq('is_bot', true)
+        if (botIds && botIds.length > 0) {
+            const rows = botIds.map((b) => ({
+                user_id: b.id,
+                last_active_visibility: 'matches',
+                message_request_mode: 'open',
+                harassment_mode: false,
+            }))
+            const chunkSize = 200
+            for (let i = 0; i < rows.length; i += chunkSize) {
+                await admin.from('user_settings').upsert(rows.slice(i, i + chunkSize), { onConflict: 'user_id' })
+            }
+        }
+
         // Profile rotation: if enabled, set random variant active
         if (settings.profile_rotation_minutes && settings.profile_rotation_minutes > 0) {
             const { data: variants } = await admin

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Input } from '@/components/ui/Input'
 import { ArrowRight } from 'lucide-react'
 import { clsx } from 'clsx'
+import { CITY_OPTIONS } from '@/utils/cities'
 
 export default function StepBasicInfo() {
     const { data, updateData, setStep } = useOnboardingStore()
@@ -98,14 +99,17 @@ export default function StepBasicInfo() {
                         </label>
                         <div className="relative group">
                             <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-violet-500 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
-                            <Input
-                                type="text"
+                            <select
                                 value={data.city}
                                 onChange={(e) => updateData({ city: e.target.value })}
-                                placeholder="İstanbul"
-                                className="relative w-full bg-white/5 border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-6 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner"
+                                className="relative w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-6 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner appearance-none"
                                 required
-                            />
+                            >
+                                <option value="" className="bg-black">Şehir seç</option>
+                                {CITY_OPTIONS.map((city) => (
+                                    <option key={city} value={city} className="bg-black">{city}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>

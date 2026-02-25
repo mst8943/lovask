@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { adminToggleVerify, adminApplyCoins, adminApplyPremiumDays, adminApplyBan, adminLiftBan, adminApplyRole, adminHandleSave } from './actions'
 import { Check, Coins, Crown, Save, X, User, Copy, Mail, ShieldAlert, Ban, CheckCircle2, Eye, Edit2, FileText, History } from 'lucide-react'
 import Image from 'next/image'
 import { getPublicImageVariant, isPublicStorageUrl } from '@/utils/media'
@@ -69,37 +69,37 @@ export default function AdminUsersPage() {
         verifications: Array<{ id: string; type: string; status: string; created_at: string }>
         transactions: Array<{ id: string; type: string; amount: number; created_at: string }>
     }>({ support: [], reports: [], verifications: [], transactions: [] })
-    const supabase = useMemo(() => createClient(), [])
     const [riskMap, setRiskMap] = useState<Record<string, number>>({})
     const [diffTarget, setDiffTarget] = useState<UserRow | null>(null)
     const [diffRows, setDiffRows] = useState<Array<{ id: string; snapshot: Record<string, unknown>; created_at: string }>>([])
     const [diffLoading, setDiffLoading] = useState(false)
     const [now, setNow] = useState(() => Date.now())
     const onlineUsers = usePresenceStore((s) => s.onlineUsers)
+    const postJson = useCallback(async (url: string, body?: Record<string, unknown>) => {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+        })
+        if (!res.ok) {
+            throw new Error(await res.text())
+        }
+        return res.json()
+    }, [])
+
     const load = useCallback(async () => {
         setLoading(true)
         setError(null)
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, display_name, is_verified, photos, users:users(email,role,coin_balance,is_premium,premium_expires_at,is_banned,ban_reason,ban_expires_at,last_active_at)')
-            .order('updated_at', { ascending: false })
-            .limit(rowLimit)
-        if (error) setError(error.message)
-        if (data) {
-            const nextRows = data as unknown as UserRow[]
+        try {
+            const payload = await postJson('/api/admin/users/list', { limit: rowLimit })
+            const nextRows = (payload.rows || []) as UserRow[]
             setRows(nextRows)
-            const ids = nextRows.map((r) => r.id)
-            if (ids.length > 0) {
-                const { data: risks } = await supabase.from('admin_risk_scores').select('user_id,score').in('user_id', ids)
-                const map: Record<string, number> = {}
-                for (const r of (risks || []) as Array<{ user_id: string; score: number }>) {
-                    map[r.user_id] = r.score
-                }
-                setRiskMap(map)
-            }
+            setRiskMap(payload.riskMap || {})
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to load users')
         }
         setLoading(false)
-    }, [supabase, rowLimit])
+    }, [postJson, rowLimit])
     useEffect(() => {
         const id = setTimeout(() => {
             void load()
@@ -122,145 +122,87 @@ export default function AdminUsersPage() {
         return () => clearInterval(id)
     }, [])
     const toggleVerify = async (id: string, value: boolean) => {
-        await supabase.from('profiles').update({ is_verified: value }).eq('id', id)
+        const res = await adminToggleVerify(id, value)
+        if (res.error) console.error(res.error)
         await logAdminAction('verify_toggle', id, { value })
         await load()
     }
     const logAdminAction = async (action: string, targetId: string, metadata?: Record<string, unknown>) => {
-        const { data: auth } = await supabase.auth.getUser()
-        await supabase.from('admin_audit_logs').insert({
-            admin_id: auth.user?.id || null,
-            action,
-            target_table: 'users',
-            target_id: targetId,
-            metadata: metadata || {},
-        })
+        await postJson('/api/admin/users/log', { action, target_id: targetId, metadata })
     }
     const applyCoins = async (targets: string[], amount: number) => {
-        const { data: auth } = await supabase.auth.getUser()
-        if (!auth.user?.id) return
-        const { data: allowed } = await supabase.rpc('check_admin_rate_limit', {
-            p_admin_id: auth.user.id,
-            p_action: 'coins_adjust',
-            p_window_seconds: 60,
-            p_max_count: 20,
-        })
-        if (!allowed) return
-        for (const id of targets) {
-            const { data } = await supabase.from('users').select('coin_balance').eq('id', id).maybeSingle()
-            const current = Number((data as { coin_balance?: number } | null)?.coin_balance || 0)
-            await supabase.from('users').update({ coin_balance: current + amount }).eq('id', id)
-            await logAdminAction('coins_adjust', id, { amount })
+        const rate = await postJson('/api/admin/users/rate-limit', { action: 'coins_adjust', window_seconds: 60, max_count: 20 })
+        if (!rate.allowed) return
+        const res = await adminApplyCoins(targets, amount)
+        if (res.success) {
+            for (const id of targets) {
+                await logAdminAction('coins_adjust', id, { amount })
+            }
         }
         await load()
     }
     const applyPremiumDays = async (targets: string[], days: number) => {
-        const { data: auth } = await supabase.auth.getUser()
-        if (!auth.user?.id) return
-        const { data: allowed } = await supabase.rpc('check_admin_rate_limit', {
-            p_admin_id: auth.user.id,
-            p_action: 'premium_extend',
-            p_window_seconds: 60,
-            p_max_count: 20,
-        })
-        if (!allowed) return
-        const now = Date.now()
-        for (const id of targets) {
-            const { data } = await supabase.from('users').select('premium_expires_at').eq('id', id).maybeSingle()
-            const existing = (data as { premium_expires_at?: string | null } | null)?.premium_expires_at
-            const base = existing ? new Date(existing).getTime() : now
-            const next = new Date(base + days * 24 * 60 * 60 * 1000).toISOString()
-            await supabase.from('users').update({ is_premium: true, premium_expires_at: next }).eq('id', id)
-            await logAdminAction('premium_extend', id, { days })
+        const rate = await postJson('/api/admin/users/rate-limit', { action: 'premium_extend', window_seconds: 60, max_count: 20 })
+        if (!rate.allowed) return
+        const res = await adminApplyPremiumDays(targets, days)
+        if (res.success) {
+            for (const id of targets) {
+                await logAdminAction('premium_extend', id, { days })
+            }
         }
         await load()
     }
     const applyBan = async (targets: string[], days: number, reason: string) => {
         const ok = window.confirm('Ban/suspend islemi uygulansin mi?')
         if (!ok) return
-        const { data: auth } = await supabase.auth.getUser()
-        if (!auth.user?.id) return
-        const { data: allowed } = await supabase.rpc('check_admin_rate_limit', {
-            p_admin_id: auth.user.id,
-            p_action: 'ban_user',
-            p_window_seconds: 60,
-            p_max_count: 10,
-        })
-        if (!allowed) return
-        const now = Date.now()
-        const expiresAt = days > 0 ? new Date(now + days * 24 * 60 * 60 * 1000).toISOString() : null
-        for (const id of targets) {
-            await supabase.from('users').update({
-                is_banned: true,
-                ban_reason: reason,
-                ban_expires_at: expiresAt,
-            }).eq('id', id)
-            await logAdminAction('ban_user', id, { reason, days })
-            await supabase.from('notifications').insert({
-                user_id: id,
-                type: 'ban',
-                payload: {
-                    title: 'Hesap kısıtlandı',
-                    body: days > 0 ? `${days} gün boyunca erişim kısıtlandı.` : 'Hesabın süresiz olarak kısıtlandı.',
-                },
-            })
+        const rate = await postJson('/api/admin/users/rate-limit', { action: 'ban_user', window_seconds: 60, max_count: 10 })
+        if (!rate.allowed) return
+        const res = await adminApplyBan(targets, days, reason)
+        if (res.success) {
+            for (const id of targets) {
+                await logAdminAction('ban_user', id, { reason, days })
+                await postJson('/api/admin/users/notify-ban', { user_id: id, days })
+            }
         }
         await load()
     }
     const liftBan = async (targets: string[]) => {
-        for (const id of targets) {
-            await supabase.from('users').update({
-                is_banned: false,
-                ban_reason: null,
-                ban_expires_at: null,
-            }).eq('id', id)
-            await logAdminAction('unban_user', id, {})
+        const res = await adminLiftBan(targets)
+        if (res.success) {
+            for (const id of targets) {
+                await logAdminAction('unban_user', id, {})
+            }
         }
         await load()
     }
     const loadAuditLogs = async (userId: string) => {
         setAuditLoading(true)
-        const { data } = await supabase
-            .from('admin_audit_logs')
-            .select('id, action, created_at, metadata')
-            .eq('target_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(50)
-        setAuditRows((data || []) as Array<{ id: string; action: string; created_at: string; metadata: Record<string, unknown> }>)
+        const payload = await postJson('/api/admin/users/audit', { user_id: userId })
+        setAuditRows((payload.rows || []) as Array<{ id: string; action: string; created_at: string; metadata: Record<string, unknown> }>)
         setAuditLoading(false)
     }
     const applyRole = async (targets: string[], role: 'user' | 'admin' | 'bot') => {
         const ok = window.confirm('Rol degisikligi uygulansin mi?')
         if (!ok) return
-        const { data: auth } = await supabase.auth.getUser()
-        if (!auth.user?.id) return
-        const { data: allowed } = await supabase.rpc('check_admin_rate_limit', {
-            p_admin_id: auth.user.id,
-            p_action: 'role_update',
-            p_window_seconds: 60,
-            p_max_count: 10,
-        })
-        if (!allowed) return
-        for (const id of targets) {
-            await supabase.from('users').update({ role }).eq('id', id)
-            await logAdminAction('role_update', id, { role })
+        const rate = await postJson('/api/admin/users/rate-limit', { action: 'role_update', window_seconds: 60, max_count: 10 })
+        if (!rate.allowed) return
+        const res = await adminApplyRole(targets, role)
+        if (res.success) {
+            for (const id of targets) {
+                await logAdminAction('role_update', id, { role })
+            }
         }
         await load()
     }
     const loadUser360 = async (user: UserRow) => {
         setProfileTarget(user)
         setProfileLoading(true)
-        const [supportRes, reportsRes, verRes, txRes] = await Promise.all([
-            supabase.from('support_tickets').select('id,subject,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-            supabase.from('reports').select('id,reason,status,created_at').eq('reported_id', user.id).order('created_at', { ascending: false }).limit(5),
-            supabase.from('user_verifications').select('id,type,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-            supabase.from('transactions').select('id,type,amount,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-        ])
+        const payload = await postJson('/api/admin/users/user360', { user_id: user.id })
         setProfileData({
-            support: (supportRes.data || []) as Array<{ id: string; subject: string; status: string; created_at: string }>,
-            reports: (reportsRes.data || []) as Array<{ id: string; reason: string | null; status: string; created_at: string }>,
-            verifications: (verRes.data || []) as Array<{ id: string; type: string; status: string; created_at: string }>,
-            transactions: (txRes.data || []) as Array<{ id: string; type: string; amount: number; created_at: string }>,
+            support: (payload.support || []) as Array<{ id: string; subject: string; status: string; created_at: string }>,
+            reports: (payload.reports || []) as Array<{ id: string; reason: string | null; status: string; created_at: string }>,
+            verifications: (payload.verifications || []) as Array<{ id: string; type: string; status: string; created_at: string }>,
+            transactions: (payload.transactions || []) as Array<{ id: string; type: string; amount: number; created_at: string }>,
         })
         setProfileLoading(false)
     }
@@ -335,17 +277,14 @@ export default function AdminUsersPage() {
         if (!form) return
         setSaving(true)
         try {
-            await supabase.from('profiles').update({
-                display_name: form.display_name,
-                is_verified: form.is_verified,
-            }).eq('id', form.id)
-            await supabase.from('users').update({
-                role: form.role,
-                coin_balance: Number(form.coin_balance || 0),
-                is_premium: form.is_premium,
-                premium_expires_at: form.is_premium ? (fromLocalInput(form.premium_expires_at) || null) : null,
-            }).eq('id', form.id)
-            await supabase.from('admin_profile_snapshots').insert({
+            const formData = {
+                ...form,
+                premium_expires_at: form.is_premium ? (fromLocalInput(form.premium_expires_at) || null) : null
+            }
+            const res = await adminHandleSave(formData)
+            if (res.error) console.error(res.error)
+
+            await postJson('/api/admin/users/snapshot', {
                 user_id: form.id,
                 snapshot: {
                     profile: { display_name: form.display_name, is_verified: form.is_verified },
@@ -353,7 +292,7 @@ export default function AdminUsersPage() {
                         role: form.role,
                         coin_balance: Number(form.coin_balance || 0),
                         is_premium: form.is_premium,
-                        premium_expires_at: form.premium_expires_at || null,
+                        premium_expires_at: formData.premium_expires_at,
                     },
                 },
             })
@@ -366,13 +305,8 @@ export default function AdminUsersPage() {
     }
     const loadDiff = async (userId: string) => {
         setDiffLoading(true)
-        const { data } = await supabase
-            .from('admin_profile_snapshots')
-            .select('id,snapshot,created_at')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(2)
-        setDiffRows((data || []) as Array<{ id: string; snapshot: Record<string, unknown>; created_at: string }>)
+        const payload = await postJson('/api/admin/users/diff', { user_id: userId })
+        setDiffRows((payload.rows || []) as Array<{ id: string; snapshot: Record<string, unknown>; created_at: string }>)
         setDiffLoading(false)
     }
     const getPhotoUrl = (photos: unknown): string | null => {

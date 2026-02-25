@@ -9,12 +9,13 @@ import { Star } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
+import { getLocationLabel } from '@/utils/location'
 export default function ProfileViewersPage() {
     const { user } = useAuthStore()
     const { hasFeature, hasFeatureForTier, featureFlags } = useEconomy()
     const [rows, setRows] = useState<Array<{
         viewer_id: string
-        profile?: { display_name: string | null; age: number | null; city: string | null }
+        profile?: { display_name: string | null; age: number | null; city: string | null; location_visibility?: 'public' | 'approx' | 'hidden' | null }
     }>>([])
     const [loading, setLoading] = useState(true)
     const [unlocking, setUnlocking] = useState(false)
@@ -48,9 +49,9 @@ export default function ProfileViewersPage() {
             }
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('id, display_name, photos, age, city')
+                .select('id, display_name, photos, age, city, location_visibility')
                 .in('id', ids)
-            const profileRows = (profiles || []) as Array<{ id: string; display_name: string | null; age: number | null; city: string | null }>
+            const profileRows = (profiles || []) as Array<{ id: string; display_name: string | null; age: number | null; city: string | null; location_visibility?: 'public' | 'approx' | 'hidden' | null }>
             const map = new Map(profileRows.map((p) => [p.id, p]))
             setRows(views.map((v) => ({ ...v, profile: map.get(v.viewer_id) })))
         } catch (err: unknown) {
@@ -84,9 +85,9 @@ export default function ProfileViewersPage() {
             }
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('id, display_name, photos, age, city')
+                .select('id, display_name, photos, age, city, location_visibility')
                 .in('id', ids)
-            const profileRows = (profiles || []) as Array<{ id: string; display_name: string | null; age: number | null; city: string | null }>
+            const profileRows = (profiles || []) as Array<{ id: string; display_name: string | null; age: number | null; city: string | null; location_visibility?: 'public' | 'approx' | 'hidden' | null }>
             const map = new Map(profileRows.map((p) => [p.id, p]))
             setRows(views.map((v) => ({ ...v, profile: map.get(v.viewer_id) })))
         } catch (err: unknown) {
@@ -147,7 +148,7 @@ export default function ProfileViewersPage() {
                     <Link key={r.viewer_id} href={`/profiles/${r.viewer_id}`} className="glass-panel p-4 rounded-2xl block">
                         <div className="font-semibold">{r.profile?.display_name || 'Kullanıcı'}</div>
                         <div className="text-xs text-gray-400">
-                            {r.profile?.age || '—'} • {r.profile?.city || '—'}
+                            {r.profile?.age || '—'} • {getLocationLabel(r.profile)}
                         </div>
                     </Link>
                 ))}
