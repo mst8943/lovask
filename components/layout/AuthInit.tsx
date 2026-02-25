@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { claimDailyBonus } from '@/services/economyService'
 import Spinner from '@/components/ui/Spinner'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 export default function AuthInit({ children }: { children: React.ReactNode }) {
     const [hydrated, setHydrated] = useState(false)
     const { setSession, setLoading } = useAuthStore()
@@ -58,11 +59,7 @@ export default function AuthInit({ children }: { children: React.ReactNode }) {
         }
     }, [supabase])
     if (!hydrated) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/90 z-[9999]">
-                <Spinner className="w-10 h-10 text-pink-500 animate-spin" />
-            </div>
-        )
+        return <LoadingSplash />
     }
     return children
 }

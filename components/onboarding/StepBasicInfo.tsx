@@ -40,6 +40,21 @@ export default function StepBasicInfo() {
         updateData({ looking_for_genders: next })
     }
 
+    const calculateAge = (birthday: string) => {
+        const ageDifMs = Date.now() - new Date(birthday).getTime()
+        const ageDate = new Date(ageDifMs)
+        return Math.abs(ageDate.getUTCFullYear() - 1970)
+    }
+
+    const handleBirthDateChange = (date: string) => {
+        const age = calculateAge(date)
+        updateData({ birth_date: date, age: age })
+    }
+
+    const maxDate = new Date()
+    maxDate.setFullYear(maxDate.getFullYear() - 18)
+    const maxDateStr = maxDate.toISOString().split('T')[0]
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -67,7 +82,7 @@ export default function StepBasicInfo() {
                             value={data.display_name}
                             onChange={(e) => updateData({ display_name: e.target.value })}
                             placeholder="ör. Alex"
-                            className="relative w-full bg-white/5 border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-6 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner"
+                            className="relative w-full bg-white/5 border-white/10 text-white placeholder-white/30 rounded-xl px-4 h-14 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner"
                             required
                         />
                     </div>
@@ -75,19 +90,18 @@ export default function StepBasicInfo() {
 
                 <div className="grid grid-cols-2 gap-5">
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wider text-white/60 ml-1">
-                            Yaş
+                        <label className="text-xs font-semibold uppercase tracking-wider text-white/60 ml-1 flex justify-between">
+                            Doğum Tarihi
+                            {data.age && <span className="text-pink-400">({data.age} Yaşında)</span>}
                         </label>
                         <div className="relative group">
                             <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-violet-500 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
                             <Input
-                                type="number"
-                                value={data.age || ''}
-                                onChange={(e) => updateData({ age: Number(e.target.value) })}
-                                placeholder="24"
-                                min={18}
-                                max={99}
-                                className="relative w-full bg-white/5 border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-6 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner"
+                                type="date"
+                                value={data.birth_date}
+                                onChange={(e) => handleBirthDateChange(e.target.value)}
+                                max={maxDateStr}
+                                className="relative w-full bg-white/5 border-white/10 text-white placeholder-white/30 rounded-xl px-4 h-14 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner block dark:[color-scheme:dark]"
                                 required
                             />
                         </div>
@@ -102,7 +116,7 @@ export default function StepBasicInfo() {
                             <select
                                 value={data.city}
                                 onChange={(e) => updateData({ city: e.target.value })}
-                                className="relative w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-6 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner appearance-none"
+                                className="relative w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 h-14 focus:border-pink-500/50 focus:ring-0 transition-all shadow-inner appearance-none outline-none"
                                 required
                             >
                                 <option value="" className="bg-black">Şehir seç</option>

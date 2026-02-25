@@ -13,6 +13,7 @@ import { createChatInitiation } from '@/services/chatService'
 import { hasReadReceiptUnlock, unlockReadReceipts } from '@/services/extraFeaturesService'
 import { fetchGifts, sendGift, Gift as GiftItem } from '@/services/giftService'
 import { upsertChatState } from '@/services/chatStateService'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import AnimatedLoader from '@/components/ui/AnimatedLoader'
 import GiftBurst from '@/components/ui/GiftBurst'
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
@@ -829,11 +830,7 @@ export default function ChatRoom() {
         setConfirmOpen(true)
     }
     if (messagesLoading || isMatchLoading || !match) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <AnimatedLoader label="Sohbet yukleniyor..." />
-            </div>
-        )
+        return <LoadingSplash text="Sohbet yükleniyor..." />
     }
     const otherUser = (match.other_user as PresenceProfile | null)
     const photoUrl = getProfileAvatar(otherUser)

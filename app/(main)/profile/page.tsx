@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { useToast } from '@/components/ui/Toast'
 import { Button } from '@/components/ui/Button'
 import { fetchPublicVerifications } from '@/services/verificationService'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import type { VerificationType } from '@/services/verificationService'
 
 export default function ProfilePage() {
@@ -277,11 +278,7 @@ export default function ProfilePage() {
     }
 
     if (!user) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <p className="text-gray-400">Lütfen giriş yap</p>
-            </div>
-        )
+        return <LoadingSplash text="Lütfen giriş yap" />
     }
 
     const myAvatar = profileData ? getProfileAvatar(profileData) : '/placeholder-user.jpg'
@@ -641,20 +638,20 @@ export default function ProfilePage() {
                                 {(premiumList.length > 0
                                     ? premiumList
                                     : [
-                                          'Sınırsız sohbet başlatma',
-                                          'Gelişmiş filtreler',
-                                          'Profilimi görenler',
-                                          'Seni beğenenler',
-                                          'Günlük boost',
-                                          'Mini Boost',
-                                          'Okundu bilgisi',
-                                          'Gizli mod',
-                                          'Günlük 1 Super Like',
-                                          'Geri alma',
-                                          'Mesaj jetonu iadesi',
-                                          'Reklamsız deneyim',
-                                          'Premium rozet',
-                                      ]
+                                        'Sınırsız sohbet başlatma',
+                                        'Gelişmiş filtreler',
+                                        'Profilimi görenler',
+                                        'Seni beğenenler',
+                                        'Günlük boost',
+                                        'Mini Boost',
+                                        'Okundu bilgisi',
+                                        'Gizli mod',
+                                        'Günlük 1 Super Like',
+                                        'Geri alma',
+                                        'Mesaj jetonu iadesi',
+                                        'Reklamsız deneyim',
+                                        'Premium rozet',
+                                    ]
                                 ).map((item) => (
                                     <span key={item} className="premium-perk-chip">
                                         {item}

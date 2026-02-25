@@ -12,6 +12,7 @@ import { getProfileAvatar } from '@/utils/avatar'
 import { Button } from '@/components/ui/Button'
 import { useSearchParams } from 'next/navigation'
 import Spinner from '@/components/ui/Spinner'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 type LikeRow = {
     from_user: string
     profile: {
@@ -244,11 +245,7 @@ export default function LikedYouPage() {
         }
     }
     if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <Spinner className="animate-spin w-8 h-8 text-pink-500" />
-            </div>
-        )
+        return <LoadingSplash />
     }
     const matches = matchRows
     const likes = likedRows

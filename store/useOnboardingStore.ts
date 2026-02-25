@@ -4,6 +4,7 @@ interface OnboardingState {
     step: number
     data: {
         display_name: string
+        birth_date: string
         age: number | null
         gender: string
         bio: string
@@ -21,6 +22,7 @@ const initialState = {
     step: 1,
     data: {
         display_name: '',
+        birth_date: '',
         age: null,
         gender: '',
         bio: '',

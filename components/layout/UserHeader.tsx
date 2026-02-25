@@ -117,12 +117,16 @@ export default function UserHeader() {
                     >
                         <ArrowLeft size={20} className="text-[var(--foreground)]/80" />
                     </Button>
-                    <span
-                        onClick={() => router.push(mainRoute)}
-                        className={`text-2xl sm:text-3xl font-black tracking-tighter text-[#d946ef] drop-shadow-[0_0_12px_rgba(217,70,239,0.4)] cursor-pointer hover:opacity-90 transition-opacity ${isMain ? 'block' : 'hidden'} md:block select-none flex-shrink-0`}
-                    >
-                        Aura
-                    </span>
+                    <Link href={mainRoute} className={`${isMain ? 'flex' : 'hidden'} md:flex items-center hover:opacity-90 transition-opacity`}>
+                        <Image
+                            src="/lovask_wordmark_logo_svg.svg"
+                            alt="Lovask"
+                            width={74}
+                            height={21}
+                            className="h-5 sm:h-6 w-auto object-contain"
+                            priority
+                        />
+                    </Link>
                 </div>
 
                 {/* 2. Middle Section: Dynamic Action / Empty on mobile to leave space */}
@@ -166,17 +170,17 @@ export default function UserHeader() {
                         {/* Premium Notification Dropdown */}
                         <div
                             className={`
-                                absolute right-0 mt-3 w-80 bg-[var(--background)]/90 backdrop-blur-2xl border border-[var(--glass-border)] rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden transition-all duration-300 origin-top-right
+                                absolute right-0 mt-3 w-[280px] sm:w-80 bg-[var(--background)]/95 backdrop-blur-2xl border border-[var(--glass-border)] rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.3)] overflow-hidden transition-all duration-300 origin-top-right z-50
                                 ${notifOpen ? 'opacity-100 scale-100 translate-y-0 visible' : 'opacity-0 scale-95 -translate-y-2 invisible'}
                             `}
                         >
-                            <div className="px-5 py-4 border-b border-[var(--glass-border)] flex items-center justify-between bg-gradient-to-r from-[var(--glass-bg)] to-transparent">
+                            <div className="px-4 py-3 border-b border-[var(--glass-border)] flex items-center justify-between bg-white/[0.02]">
                                 <div>
-                                    <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-pink-500/80 mb-1">Bildirimler</div>
-                                    <div className="text-base font-bold text-[var(--foreground)]">Son Etkileşimler</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-pink-500/90 mb-0.5">Bildirimler</div>
+                                    <div className="text-sm font-bold text-[var(--foreground)]">Son Etkileşimler</div>
                                 </div>
                                 {unread > 0 && (
-                                    <span className="px-2 py-1 bg-pink-500/10 text-pink-500 rounded-lg text-xs font-semibold">
+                                    <span className="px-1.5 py-0.5 bg-pink-500/15 text-pink-400 rounded-lg text-[10px] font-bold">
                                         {unread} Yeni
                                     </span>
                                 )}
@@ -206,19 +210,19 @@ export default function UserHeader() {
                                                 <Link
                                                     key={n.id}
                                                     href={url}
-                                                    className="group block p-4 hover:bg-[var(--glass-bg)] transition-colors relative"
+                                                    className="group block p-3 hover:bg-white/[0.03] transition-colors relative"
                                                     onClick={async () => {
                                                         if (!n.is_read) await markNotificationRead(n.id)
                                                         setNotifOpen(false)
                                                     }}
                                                 >
-                                                    {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.8)]" />}
-                                                    <div className="flex gap-3">
-                                                        <div className={`mt-0.5 flex-shrink-0 w-2 h-2 rounded-full ${n.is_read ? 'bg-transparent' : 'bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]'}`} />
-                                                        <div className="flex-1">
-                                                            <div className={`text-sm ${n.is_read ? 'font-medium text-[var(--foreground)]/80' : 'font-bold text-[var(--foreground)]'}`}>{title}</div>
-                                                            {body && <div className="text-xs text-[var(--foreground)]/60 mt-1 line-clamp-2 leading-relaxed">{body}</div>}
-                                                            <div className="text-[10px] text-[var(--foreground)]/40 mt-2 font-medium tracking-wide">
+                                                    {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-pink-500" />}
+                                                    <div className="flex gap-2.5">
+                                                        <div className={`mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full ${n.is_read ? 'bg-transparent' : 'bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.6)]'}`} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className={`text-xs ${n.is_read ? 'font-medium text-[var(--foreground)]/70' : 'font-bold text-[var(--foreground)]'} truncate`}>{title}</div>
+                                                            {body && <div className="text-[11px] text-[var(--foreground)]/50 mt-0.5 line-clamp-1 leading-tight">{body}</div>}
+                                                            <div className="text-[9px] text-[var(--foreground)]/30 mt-1.5 font-medium">
                                                                 {new Date(n.created_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
                                                             </div>
                                                         </div>

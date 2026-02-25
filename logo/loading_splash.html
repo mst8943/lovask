@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lovask Splash / Loading</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --brand-magenta: #D91C5C;
+            --brand-purple: #75225E;
+            --brand-gold: #D4AF37;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        /* The overall container for the splash loader */
+        .splash-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Glowing backdrop effect */
+        .glow-sphere {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(217,28,92,0.15) 0%, rgba(18,18,20,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            animation: pulse-glow 3s ease-in-out infinite alternate;
+        }
+
+        /* Premium Spinner Ring */
+        .spinner-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            position: relative;
+            z-index: 1;
+            /* Thin track */
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            /* Gradient Masking to rotate */
+            background: conic-gradient(from 0deg, transparent 60%, var(--brand-gold) 90%, var(--brand-magenta) 100%);
+            -webkit-mask: radial-gradient(transparent 58px, #000 59px);
+            mask: radial-gradient(transparent 58px, #000 59px);
+            animation: spin 1.5s linear infinite;
+        }
+
+        /* Central Icon / Heart (The Logo substitute) */
+        .center-icon {
+            position: absolute;
+            z-index: 2;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: heartbeat 2s infinite cubic-bezier(0.215, 0.610, 0.355, 1.000);
+        }
+
+        .heart {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, var(--brand-magenta), var(--brand-purple));
+            position: relative;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 20px rgba(217, 28, 92, 0.4);
+            border-radius: 4px 4px 4px 8px; /* Slightly abstract heart/L shape */
+        }
+
+        .heart::before,
+        .heart::after {
+            content: "";
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, var(--brand-magenta), var(--brand-purple));
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .heart::before {
+            top: -15px;
+            left: 0;
+        }
+
+        .heart::after {
+            left: 15px;
+            top: 0;
+            background: linear-gradient(135deg, var(--brand-purple), var(--brand-magenta));
+        }
+
+        /* "Aura" elegant text fade-in */
+        .brand-text {
+            margin-top: 40px;
+            color: white;
+            font-size: 24px;
+            font-weight: 200;
+            letter-spacing: 6px;
+            z-index: 1;
+            opacity: 0;
+            animation: fade-in 2s ease-out forwards;
+            animation-delay: 0.5s;
+            background: linear-gradient(90deg, #fff, var(--brand-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(0.95); }
+            5% { transform: scale(1.05); }
+            10% { transform: scale(0.95); }
+            15% { transform: scale(1.05); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(0.95); }
+        }
+
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 0.9; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="splash-container">
+        <!-- Glowing background sphere -->
+        <div class="glow-sphere"></div>
+        
+        <!-- Rotating gradient border -->
+        <div class="spinner-ring"></div>
+        
+        <!-- Beating elegant heart/icon -->
+        <div class="center-icon">
+            <div class="heart"></div>
+        </div>
+    </div>
+
+    <!-- Elegant text fading in -->
+    <div class="brand-text">LOVASK</div>
+
+</body>
+</html>

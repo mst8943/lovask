@@ -38,6 +38,10 @@
 
   --duration-fast: 150ms;
   --duration-normal: 300ms;
+
+  --coin-bg: #1c1105;
+  --coin-text: #ffd08a;
+  --coin-border: rgba(179, 121, 15, 0.4);
 }
 
 html[data-theme='light'] {
@@ -51,11 +55,15 @@ html[data-theme='light'] {
   /* AURA V2: LIGHT THEME */
   --surface-0: #FFFFFF;
   --surface-1: #F9FAFB;
-  --surface-2: #F3F4F6;
+  --surface-2: #D1D5DB;
 
   --text-primary: #111827;
   --text-secondary: #6B7280;
   --text-disabled: #9CA3AF;
+
+  --coin-bg: #fff9f0;
+  --coin-text: #b3790f;
+  --coin-border: rgba(179, 121, 15, 0.6);
 
   --primary-500: #E11D48;
   --accent-400: #8B5CF6;
@@ -111,6 +119,96 @@ html[data-theme='light'] {
     50% {
       transform: translateY(-20px);
     }
+  }
+
+  @keyframes pulse-glow {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.5;
+    }
+
+    100% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes heartbeat {
+    0% {
+      transform: scale(0.95);
+    }
+
+    5% {
+      transform: scale(1.05);
+    }
+
+    10% {
+      transform: scale(0.95);
+    }
+
+    15% {
+      transform: scale(1.05);
+    }
+
+    50% {
+      transform: scale(0.95);
+    }
+
+    100% {
+      transform: scale(0.95);
+    }
+  }
+}
+
+/* ── Lovask brand spinner / splash animations ── */
+/* Defined globally (outside @theme) so they work in all browsers & PWA */
+@keyframes pulse-glow {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(0.95);
+  }
+
+  5% {
+    transform: scale(1.05);
+  }
+
+  10% {
+    transform: scale(0.95);
+  }
+
+  15% {
+    transform: scale(1.05);
+  }
+
+  50% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(0.95);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  100% {
+    opacity: 0.9;
+    transform: translateY(0);
   }
 }
 

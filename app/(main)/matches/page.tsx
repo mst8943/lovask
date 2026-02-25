@@ -7,6 +7,7 @@ import { Archive, Star, Trash2, Filter } from 'lucide-react'
 import { getProfileAvatar } from '@/utils/avatar'
 import { Button } from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import { usePresenceStore } from '@/store/usePresenceStore'
 import { canShowLastActive } from '@/utils/lastActive'
 import type { LastActiveVisibility } from '@/utils/lastActive'
@@ -37,11 +38,7 @@ export default function MatchesPage() {
         { key: 'trash', label: 'Çöp' },
     ] as const
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <Spinner className="animate-spin w-8 h-8 text-pink-500" />
-            </div>
-        )
+        return <LoadingSplash />
     }
     return (
         <div className="space-y-4">

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/useAuthStore'
-import Spinner from '@/components/ui/Spinner'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 const ONBOARDING_PATH = '/onboarding'
 export default function AuthGate({ children }: { children: React.ReactNode }) {
     const { session, user, isLoading } = useAuthStore()
@@ -39,11 +39,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         checkProfile()
     }, [isLoading, session, user, pathname, router, supabase, profileChecked, checkingProfile])
     if (isLoading || !session || checkingProfile) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/90 z-[9999]">
-                <Spinner className="w-10 h-10 text-pink-500 animate-spin" />
-            </div>
-        )
+        return <LoadingSplash />
     }
     return children
 }

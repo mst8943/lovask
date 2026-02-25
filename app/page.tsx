@@ -1,13 +1,45 @@
 ﻿'use client'
 
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabase/client'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 
 export default function ZenithLanding() {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { user, isLoading } = useAuthStore()
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+
+  // Auto-redirect if logged in
+  useEffect(() => {
+    if (!isLoading && user) {
+      const checkProfile = async () => {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (data) {
+          router.replace('/feed')
+        } else {
+          router.replace('/onboarding')
+        }
+      }
+      checkProfile()
+    }
+  }, [user, isLoading, router, supabase])
+
+  // While auth is loading OR user is logged in (redirecting) — show splash
+  if (isLoading || user) {
+    return <LoadingSplash />
+  }
 
   // Custom Hook to replicate the horizontal scroll behavior
   const { scrollYProgress } = useScroll({
@@ -371,7 +403,17 @@ export default function ZenithLanding() {
 
       {/* 1. Sidebar */}
       <aside className="zenithV4_sidebar_landing">
-        <Link href="/" className="zenithV4_brand">ZENITH</Link>
+        <Link href="/" className="zenithV4_brand" style={{ writingMode: 'unset', transform: 'none', padding: '0 10px' }}>
+          <Image
+            src="/lovask_wordmark_logo_svg.svg"
+            alt="Lovask"
+            width={71}
+            height={21}
+            className="w-full h-auto object-contain"
+            style={{ transform: 'rotate(90deg)' }}
+            priority
+          />
+        </Link>
         <div className="zenithV4_menu_icon">
           <span></span>
           <span></span>
@@ -396,8 +438,17 @@ export default function ZenithLanding() {
             Dijital <span>Zarafet</span>
           </h1>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <Link href="/register" className="zenithV4_btn primary">ÖZEL DAVETİ AL</Link>
-            <Link href="/login" className="zenithV4_btn">ÜYE GİRİŞİ</Link>
+            {user ? (
+              <>
+                <Link href="/store/premium" className="zenithV4_btn primary">PREMIUM AYRICALIKLAR</Link>
+                <Link href="/profile" className="zenithV4_btn">PROFİLİME GİT</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/register" className="zenithV4_btn primary">ÖZEL DAVETİ AL</Link>
+                <Link href="/login" className="zenithV4_btn">ÜYE GİRİŞİ</Link>
+              </>
+            )}
           </div>
           <div className="zenithV4_hero_meta">
             <span>Seçkin Üyeler</span>
@@ -483,8 +534,8 @@ export default function ZenithLanding() {
 
             {/* Panel 4 - CTA */}
             <div className="zenithV4_feature_panel" style={{ background: 'var(--zenithV4_accent)', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-              <h3 className="zenithV4_panel_title" style={{ color: '#000', fontSize: '4rem' }}>Şimdi Katıl</h3>
-              <Link href="/register" style={{ marginTop: '2rem', border: '1px solid #000', padding: '1rem 2rem', color: '#000', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Yolculuğa Başla</Link>
+              <h3 className="zenithV4_panel_title" style={{ color: '#000', fontSize: '4rem' }}>{user ? 'Aramıza Dön' : 'Şimdi Katıl'}</h3>
+              <Link href={user ? "/swipe" : "/register"} style={{ marginTop: '2rem', border: '1px solid #000', padding: '1rem 2rem', color: '#000', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{user ? 'Keşfetmeye Başla' : 'Yolculuğa Başla'}</Link>
             </div>
 
           </motion.div>
@@ -624,7 +675,15 @@ export default function ZenithLanding() {
           </nav>
           <p style={{ opacity: 0.5, fontSize: '0.8rem' }}>� {new Date().getFullYear()} Lovask Inc.</p>
         </div>
-        <h2 style={{ fontFamily: 'var(--zenithV4_font_head)', fontSize: '5vw', color: '#1a1a1a', margin: 0, lineHeight: 1 }}>LOVASK</h2>
+        <div style={{ width: '40%', maxWidth: '300px' }}>
+          <Image
+            src="/lovask_wordmark_logo_svg.svg"
+            alt="Lovask"
+            width={133}
+            height={45}
+            className="w-full h-auto opacity-20 grayscale brightness-200"
+          />
+        </div>
       </footer>
 
     </div>

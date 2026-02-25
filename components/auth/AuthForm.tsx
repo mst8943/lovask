@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { clsx } from 'clsx'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
@@ -110,16 +111,27 @@ export default function AuthForm({ type }: AuthFormProps) {
 
     return (
         <div className="w-full space-y-10">
-            <div className="space-y-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-2">
-                    {type === 'login' ? 'Tekrar Hoş Geldin' : 'Kayıt Ol'}
-                    <span className="text-pink-500">.</span>
-                </h1>
-                <p className="text-base sm:text-lg text-white/50 font-medium">
-                    {type === 'login'
-                        ? 'Hesabına giriş yaparak keşfetmeye devam et.'
-                        : 'Aura dünyasına katılmak için bilgilerini gir.'}
-                </p>
+            <div className="space-y-6">
+                <Link href="/" className="block -ml-1.5 transform-gpu sm:-ml-2">
+                    <Image
+                        src="/lovask_wordmark_logo_svg.svg"
+                        alt="Lovask"
+                        width={160}
+                        height={54}
+                        className="h-10 sm:h-11 w-auto object-contain"
+                    />
+                </Link>
+                <div className="space-y-3">
+                    <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-2">
+                        {type === 'login' ? 'Tekrar Hoş Geldin' : 'Kayıt Ol'}
+                        <span className="text-pink-500">.</span>
+                    </h1>
+                    <p className="text-base sm:text-lg text-white/50 font-medium">
+                        {type === 'login'
+                            ? 'Hesabına giriş yaparak keşfetmeye devam et.'
+                            : 'Lovask dünyasına katılmak için bilgilerini gir.'}
+                    </p>
+                </div>
             </div>
 
             <form onSubmit={handleAuth} className="space-y-6">

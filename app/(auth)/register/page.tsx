@@ -1,8 +1,22 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/store/useAuthStore'
 import AuthForm from '@/components/auth/AuthForm'
 import Image from 'next/image'
 import { Sparkles, Star, Heart } from 'lucide-react'
 
 export default function RegisterPage() {
+    const { user, isLoading } = useAuthStore()
+    const router = useRouter()
+
+    useEffect(() => {
+        if (!isLoading && user) {
+            router.replace('/feed')
+        }
+    }, [user, isLoading, router])
+
     return (
         <div className="min-h-screen grid lg:grid-cols-2 bg-[#09090b]">
             {/* Left Column - Visuals */}
@@ -20,12 +34,6 @@ export default function RegisterPage() {
                     <Sparkles className="w-8 h-8 text-violet-400" />
                 </div>
 
-                <div className="relative z-10 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-violet-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
-                        <Sparkles className="w-7 h-7 text-white" />
-                    </div>
-                    <span className="text-3xl font-bold text-white tracking-tight">Lovask</span>
-                </div>
 
                 <div className="relative z-10 space-y-8 max-w-lg mt-20">
                     <h1 className="text-5xl xl:text-6xl font-extrabold tracking-tight text-white/90 leading-tight">
@@ -73,12 +81,6 @@ export default function RegisterPage() {
                 <div className="absolute top-0 right-0 w-full h-[50vh] bg-gradient-to-b from-pink-500/10 to-transparent lg:hidden" />
                 <div className="absolute top-[10%] left-[10%] w-[50vw] h-[50vw] rounded-full bg-violet-600/20 blur-[100px] lg:hidden" />
 
-                {/* Mobile Header */}
-                <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-pink-500 to-violet-500 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-                </div>
 
                 <div className="w-full max-w-[440px] relative z-10">
                     <AuthForm type="register" />

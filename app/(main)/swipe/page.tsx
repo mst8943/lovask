@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useFeedList } from '@/hooks/useFeedList'
 
-import { Heart, X, Star, RotateCcw, Info, EyeOff } from 'lucide-react'
+import { Heart, X, Star, RotateCcw } from 'lucide-react'
 
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 
@@ -30,6 +30,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 import { Button } from '@/components/ui/Button'
 
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import { getProfileAvatar } from '@/utils/avatar'
 
 import { sendMessage } from '@/services/chatService'
@@ -69,8 +70,6 @@ export default function SwipePage() {
         passProfile,
 
         favorites,
-
-        toggleFavorite,
 
     } = useFeedList()
 
@@ -589,17 +588,7 @@ export default function SwipePage() {
 
 
     if (isLoading) {
-
-        return (
-
-            <div className="flex items-center justify-center min-h-[50vh]">
-
-                <AnimatedLoader label="Profiller yükleniyor..." />
-
-            </div>
-
-        )
-
+        return <LoadingSplash text="Profiller yükleniyor..." />
     }
 
 
@@ -648,17 +637,17 @@ export default function SwipePage() {
 
     const nextPhotoUrl = nextCard ? getProfileAvatar(nextCard) : null
 
-    const isFavorited = current ? favorites.includes(current.id) : false
+
 
 
 
     return (
 
-        <div className="flex flex-col h-[calc(100dvh-60px-64px)] md:h-auto md:space-y-6 md:pb-4">
+        <div className="flex flex-col h-[calc(100dvh-60px-64px)] md:h-auto md:space-y-6 md:pb-4 pb-8">
 
 
 
-            <div className="relative w-full max-w-md mx-auto flex-1 min-h-0 md:flex-none md:aspect-[3/4] md:max-h-[70vh]">
+            <div className="relative w-full max-w-[350px] sm:max-w-md mx-auto flex-1 min-h-0 md:flex-none md:aspect-[3/4] md:max-h-[70vh]">
 
                 {nextCard && (
 
@@ -779,53 +768,9 @@ export default function SwipePage() {
                 </AnimatePresence>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-xs py-1">
-                <Button
-                    onClick={async () => {
-                        if (!current) return
-                        await toggleFavorite(current.id)
-                        toast.push(isFavorited ? 'Favoriden çıkarıldı.' : 'Favorilere eklendi.', 'success')
-                    }}
-                    variant="secondary"
-                    size="sm"
-                    className="rounded-full px-3"
-                >
-                    <Heart size={14} className={isFavorited ? 'fill-current text-pink-400' : ''} />
-                    <span className="ml-1">{isFavorited ? 'Favoride' : 'Favori'}</span>
-                </Button>
-                <Link
-                    href={`/profiles/${current.id}`}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 transition text-xs border border-white/10"
 
-                >
 
-                    <Info size={14} />
-
-                    Profil
-
-                </Link>
-
-                <Button
-
-                    onClick={() => handleSwipe('left')}
-
-                    variant="secondary"
-
-                    size="sm"
-
-                    className="rounded-full px-3 text-gray-300 border border-white/10"
-
-                >
-
-                    <EyeOff size={14} />
-
-                    <span className="ml-1">Gizle</span>
-
-                </Button>
-
-            </div>
-
-            <div className="flex items-center justify-center gap-4 py-4 shrink-0 bg-transparent mt-2">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 py-2 sm:py-4 shrink-0 bg-transparent mb-8 sm:mb-0">
 
                 <Button
 
@@ -837,13 +782,13 @@ export default function SwipePage() {
 
                     size="icon"
 
-                    className="h-14 w-14 rounded-full border-surface-2 bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-surface-2"
+                    className="h-12 w-12 sm:h-14 sm:w-14 rounded-full border-surface-2 bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-surface-2"
 
                     title="Geri Al"
 
                 >
 
-                    <RotateCcw size={20} />
+                    <RotateCcw size={18} />
 
                 </Button>
 
@@ -857,13 +802,13 @@ export default function SwipePage() {
 
                     size="icon"
 
-                    className="h-16 w-16 rounded-full border-surface-2 bg-surface-1 text-status-destructive hover:bg-status-destructive/10 hover:border-status-destructive"
+                    className="h-14 w-14 sm:h-16 sm:w-16 rounded-full border-surface-2 bg-surface-1 text-status-destructive hover:bg-status-destructive/10 hover:border-status-destructive"
 
                     title="Geç"
 
                 >
 
-                    <X size={28} />
+                    <X size={24} />
 
                 </Button>
 
@@ -877,13 +822,13 @@ export default function SwipePage() {
 
                     size="icon"
 
-                    className="h-14 w-14 rounded-full border-surface-2 bg-surface-1 text-brand-accent hover:bg-brand-accent/10 hover:border-brand-accent"
+                    className="h-12 w-12 sm:h-14 sm:w-14 rounded-full border-surface-2 bg-surface-1 text-brand-accent hover:bg-brand-accent/10 hover:border-brand-accent"
 
                     title="Süper Beğeni"
 
                 >
 
-                    <Star size={22} />
+                    <Star size={20} />
 
                 </Button>
 
@@ -897,13 +842,13 @@ export default function SwipePage() {
 
                     size="icon"
 
-                    className="h-16 w-16 rounded-full shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50"
+                    className="h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50"
 
                     title="Beğen"
 
                 >
 
-                    <Heart size={28} className="fill-current" />
+                    <Heart size={24} className="fill-current" />
 
                 </Button>
 

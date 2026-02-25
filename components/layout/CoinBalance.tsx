@@ -21,7 +21,7 @@ export default function CoinBalance() {
                 onClick={() => setShowPremium(true)}
                 variant="ghost"
                 size="sm"
-                className="px-3 py-1.5 h-auto text-[13px] font-bold flex items-center gap-1.5 transition-all outline-none bg-[#1c1105] hover:bg-[#2a1a08] border-[0.5px] border-[#b3790f66] text-[#ffd08a] rounded-full shadow-[0_2px_10px_rgba(179,121,15,0.2)]"
+                className="px-3 py-1.5 h-auto text-[13px] font-bold flex items-center gap-1.5 transition-all outline-none bg-[var(--coin-bg)] border-[0.5px] border-[var(--coin-border)] text-[var(--coin-text)] rounded-full shadow-[0_2px_10px_rgba(179,121,15,0.1)] hover:opacity-80"
             >
                 <div className="flex items-center justify-center w-[18px] h-[18px] bg-gradient-to-br from-[#ffe2a3] to-[#f6c36c] rounded-full text-[#7a4c00]">
                     <Coins size={11} strokeWidth={2} className="text-[#7a4c00]" />

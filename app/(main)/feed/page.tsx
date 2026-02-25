@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import BoostsBar from '@/components/feed/BoostsBar'
 import Spinner from '@/components/ui/Spinner'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import { CITY_OPTIONS } from '@/utils/cities'
 
 export default function FeedPage() {
@@ -370,19 +371,13 @@ export default function FeedPage() {
         !isDefaultGenderFilter && filters.genders.length > 0,
         filters.interests.length,
         filters.onlineOnly,
-        filters.premiumOnly,
-        filters.distanceKm !== 50,
         filters.eventOnly && filters.eventId,
         filters.serendipity,
         filters.diversity,
     ].filter(Boolean).length
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <Spinner className="animate-spin w-10 h-10 text-pink-500" />
-            </div>
-        )
+        return <LoadingSplash />
     }
 
     const hasProfiles = diversifiedProfiles.length > 0

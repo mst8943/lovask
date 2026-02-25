@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { ArrowLeft, Plus, X, MapPin } from 'lucide-react'
+import { ArrowLeft, Plus, X, MapPin, Star, User } from 'lucide-react'
 import Image from 'next/image'
 import { useToast } from '@/components/ui/Toast'
 import { processImage } from '@/utils/imageUtils'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { fetchProfileVariantApprovals, fetchProfileVariantsEnabled } from '@/services/appSettingsService'
 import Spinner from '@/components/ui/Spinner'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import { CITY_OPTIONS } from '@/utils/cities'
 interface ProfileData {
     id: string
@@ -152,33 +153,33 @@ export default function EditProfilePage() {
                 ? profile.height_cm
                 : null
             const payload = {
-                    id: user.id,
-                    display_name: profile.display_name,
-                    age: safeAge,
-                    gender: profile.gender,
-                    bio: profile.bio,
-                    city: profile.city,
-                    looking_for_genders: profile.looking_for_genders,
-                    photos: profile.photos,
-                    interests: profile.interests,
-                    relationship_type: profile.relationship_type || null,
-                    education: profile.education || null,
-                    smoking: profile.smoking || null,
-                    alcohol: profile.alcohol || null,
-                    kids_status: profile.kids_status || null,
-                    height_cm: safeHeight,
-                    religion: profile.religion || null,
-                    lifestyle: profile.lifestyle || null,
-                    intent: profile.intent || null,
-                    relationship_goal: profile.relationship_goal || null,
-                    work_title: profile.work_title || null,
-                    languages: profile.languages || [],
-                    dealbreakers: profile.dealbreakers || [],
-                    values: profile.values || [],
-                    family_plans: profile.family_plans || null,
-                    pets: profile.pets || null,
-                    fitness: profile.fitness || null,
-                }
+                id: user.id,
+                display_name: profile.display_name,
+                age: safeAge,
+                gender: profile.gender,
+                bio: profile.bio,
+                city: profile.city,
+                looking_for_genders: profile.looking_for_genders,
+                photos: profile.photos,
+                interests: profile.interests,
+                relationship_type: profile.relationship_type || null,
+                education: profile.education || null,
+                smoking: profile.smoking || null,
+                alcohol: profile.alcohol || null,
+                kids_status: profile.kids_status || null,
+                height_cm: safeHeight,
+                religion: profile.religion || null,
+                lifestyle: profile.lifestyle || null,
+                intent: profile.intent || null,
+                relationship_goal: profile.relationship_goal || null,
+                work_title: profile.work_title || null,
+                languages: profile.languages || [],
+                dealbreakers: profile.dealbreakers || [],
+                values: profile.values || [],
+                family_plans: profile.family_plans || null,
+                pets: profile.pets || null,
+                fitness: profile.fitness || null,
+            }
             const cleanPayload = Object.fromEntries(
                 Object.entries(payload).filter(([, value]) => value !== undefined)
             )
@@ -234,6 +235,16 @@ export default function EditProfilePage() {
             ...prev,
             photos: prev.photos.filter((p) => p !== photoUrl),
         }))
+    }
+    const movePhotoToMain = (photoUrl: string) => {
+        setProfile((prev) => {
+            const others = prev.photos.filter((p) => p !== photoUrl)
+            return {
+                ...prev,
+                photos: [photoUrl, ...others]
+            }
+        })
+        toast.push('Ana fotoğraf seçildi. Değişiklikleri kaydetmeyi unutmayın.', 'success')
     }
     const createVariant = async () => {
         if (!user) return
@@ -309,11 +320,7 @@ export default function EditProfilePage() {
         }
     }
     if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Spinner className="animate-spin w-8 h-8 text-pink-500" />
-            </div>
-        )
+        return <LoadingSplash />
     }
     return (
         <div className="profile-edit-shell pb-24">
@@ -340,7 +347,7 @@ export default function EditProfilePage() {
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                         {profile.photos.map((url, index) => (
-                            <div key={url + index} className="relative aspect-[3/4] rounded-xl overflow-hidden group bg-white/5">
+                            <div key={url + index} className="relative aspect-[3/4] rounded-xl overflow-hidden group bg-white/5 border border-white/5">
                                 <Image
                                     src={url}
                                     alt="Profil"
@@ -348,17 +355,30 @@ export default function EditProfilePage() {
                                     sizes="(max-width: 768px) 33vw, 200px"
                                     className="object-cover"
                                 />
-                                <Button
-                                    onClick={() => removePhoto(url)}
-                                    variant="secondary"
-                                    size="icon"
-                                    className="absolute top-1 right-1 h-7 w-7 bg-black/50 text-white opacity-0 group-hover:opacity-100"
-                                >
-                                    <X size={14} />
-                                </Button>
+                                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {index !== 0 && (
+                                        <Button
+                                            onClick={() => movePhotoToMain(url)}
+                                            variant="secondary"
+                                            size="icon"
+                                            className="h-7 w-7 bg-pink-500/80 hover:bg-pink-500 text-white border-none"
+                                            title="Ana Fotoğraf Yap"
+                                        >
+                                            <User size={14} fill="currentColor" />
+                                        </Button>
+                                    )}
+                                    <Button
+                                        onClick={() => removePhoto(url)}
+                                        variant="secondary"
+                                        size="icon"
+                                        className="h-7 w-7 bg-black/60 hover:bg-black/80 text-white border-none"
+                                    >
+                                        <X size={14} />
+                                    </Button>
+                                </div>
                                 {index === 0 && (
-                                    <div className="absolute bottom-0 inset-x-0 bg-black/60 text-[10px] text-center py-1 text-white font-medium">
-                                        Ana
+                                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent text-[10px] text-center pt-4 pb-1 text-white font-bold tracking-wider uppercase">
+                                        Ana Profil
                                     </div>
                                 )}
                             </div>
@@ -720,53 +740,53 @@ export default function EditProfilePage() {
                                 {variantPendingCount} varyant admin onayi bekliyor.
                             </div>
                         )}
-                    <div className="glass-panel p-4 rounded-2xl space-y-3">
-                        <Input
-                            value={variantForm.name}
-                            onChange={(e) => setVariantForm({ ...variantForm, name: e.target.value })}
-                            placeholder="Varyant adı"
-                            className="w-full bg-white/5 border border-white/10"
-                        />
-                        <textarea
-                            value={variantForm.bio}
-                            onChange={(e) => setVariantForm({ ...variantForm, bio: e.target.value })}
-                            placeholder="Varyant biyografi"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 min-h-[80px]"
-                        />
-                        <Input
-                            value={variantForm.photos}
-                            onChange={(e) => setVariantForm({ ...variantForm, photos: e.target.value })}
-                            placeholder="Foto URL (virgül ile)"
-                            className="w-full bg-white/5 border border-white/10"
-                        />
-                        <Button
-                            onClick={createVariant}
-                            variant="secondary"
-                            className="w-full text-sm"
-                            disabled={!variantsEnabled}
-                        >
-                            Varyant Ekle
-                        </Button>
-                    </div>
-                    <div className="space-y-2">
-                        {variants.map((v) => (
-                            <div key={v.id} className="glass-panel p-3 rounded-2xl flex items-center justify-between">
-                                <div>
-                                    <div className="font-semibold">{v.name || 'Varyant'}</div>
-                                    <div className="text-xs text-gray-400">{v.is_active ? 'Aktif' : 'Pasif'}</div>
+                        <div className="glass-panel p-4 rounded-2xl space-y-3">
+                            <Input
+                                value={variantForm.name}
+                                onChange={(e) => setVariantForm({ ...variantForm, name: e.target.value })}
+                                placeholder="Varyant adı"
+                                className="w-full bg-white/5 border border-white/10"
+                            />
+                            <textarea
+                                value={variantForm.bio}
+                                onChange={(e) => setVariantForm({ ...variantForm, bio: e.target.value })}
+                                placeholder="Varyant biyografi"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 min-h-[80px]"
+                            />
+                            <Input
+                                value={variantForm.photos}
+                                onChange={(e) => setVariantForm({ ...variantForm, photos: e.target.value })}
+                                placeholder="Foto URL (virgül ile)"
+                                className="w-full bg-white/5 border border-white/10"
+                            />
+                            <Button
+                                onClick={createVariant}
+                                variant="secondary"
+                                className="w-full text-sm"
+                                disabled={!variantsEnabled}
+                            >
+                                Varyant Ekle
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            {variants.map((v) => (
+                                <div key={v.id} className="glass-panel p-3 rounded-2xl flex items-center justify-between">
+                                    <div>
+                                        <div className="font-semibold">{v.name || 'Varyant'}</div>
+                                        <div className="text-xs text-gray-400">{v.is_active ? 'Aktif' : 'Pasif'}</div>
+                                    </div>
+                                    <Button
+                                        onClick={() => setActiveVariant(v.id)}
+                                        variant="secondary"
+                                        size="sm"
+                                        className="text-xs"
+                                        disabled={!variantsEnabled}
+                                    >
+                                        Aktif Et
+                                    </Button>
                                 </div>
-                                <Button
-                                    onClick={() => setActiveVariant(v.id)}
-                                    variant="secondary"
-                                    size="sm"
-                                    className="text-xs"
-                                    disabled={!variantsEnabled}
-                                >
-                                    Aktif Et
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
                     </section>
                 )}
             </div>

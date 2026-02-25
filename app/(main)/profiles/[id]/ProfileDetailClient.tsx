@@ -12,6 +12,7 @@ import { blockUser, reportUser } from '@/services/moderationService'
 import { createBotMatch } from '@/services/chatService'
 import { useToast } from '@/components/ui/Toast'
 import { getIncognitoActive } from '@/services/extraFeaturesService'
+import LoadingSplash from '@/components/ui/LoadingSplash'
 import AnimatedLoader from '@/components/ui/AnimatedLoader'
 import MatchCelebration from '@/components/ui/MatchCelebration'
 import InputDialog from '@/components/ui/InputDialog'
@@ -281,11 +282,7 @@ export default function ProfileDetailClient() {
     }
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <AnimatedLoader label="Profil yukleniyor..." />
-            </div>
-        )
+        return <LoadingSplash text="Profil yükleniyor..." />
     }
 
     if (!profile) {
@@ -426,11 +423,7 @@ export default function ProfileDetailClient() {
     }
 
     if (isOwnProfile) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <AnimatedLoader label="Profil sayfasına yönlendiriliyor..." />
-            </div>
-        )
+        return <LoadingSplash text="Profil sayfasına yönlendiriliyor..." />
     }
 
     return (
@@ -588,7 +581,7 @@ export default function ProfileDetailClient() {
                                 className="flex-1 flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10 transition-colors"
                             >
                                 <Ban size={14} />
-                                Engelle
+                                Gizle / Engelle
                             </button>
                             <button
                                 onClick={handleReport}
@@ -732,7 +725,7 @@ export default function ProfileDetailClient() {
                             >
                                 Sohbet Başlat
                             </Button>
-                            {!isBot && (
+                            {!isMatched && (
                                 <Button
                                     onClick={handleLike}
                                     size="lg"
@@ -765,7 +758,7 @@ export default function ProfileDetailClient() {
                                 onClick={handleBlock}
                                 className="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors"
                             >
-                                {blocking ? 'İşleniyor...' : 'Kullanıcıyı Engelle'}
+                                {blocking ? 'İşleniyor...' : 'Profili Gizle / Engelle'}
                             </button>
                             <button
                                 onClick={handleReport}
@@ -787,7 +780,7 @@ export default function ProfileDetailClient() {
                     >
                         Sohbet
                     </Button>
-                    {!isBot && (
+                    {!isMatched && (
                         <Button
                             onClick={handleLike}
                             disabled={actionLoading}
