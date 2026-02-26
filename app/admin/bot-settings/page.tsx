@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { formatHours, parseActiveHoursForSave, parseActiveHoursInput, toUtcHours } from '@/lib/activeHours'
 import Spinner from '@/components/ui/Spinner'
 type Settings = {
     id?: string
@@ -42,6 +43,7 @@ export default function BotSettingsPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [activeHoursUseTr, setActiveHoursUseTr] = useState(false)
     const supabase = useMemo(() => createClient(), [])
     useEffect(() => {
         const load = async () => {
@@ -68,12 +70,7 @@ export default function BotSettingsPage() {
     const save = async () => {
         setSaving(true)
         setError(null)
-        const hours = (settings.active_hours_raw || '')
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean)
-            .map((v) => Number(v))
-            .filter((v) => !Number.isNaN(v) && v >= 0 && v <= 23)
+        const hours = parseActiveHoursForSave(settings.active_hours_raw || '', activeHoursUseTr)
         const { active_hours_raw: _activeHoursRaw, ...rest } = settings
         void _activeHoursRaw
         const payload: Settings & { active_hours: number[] } = { ...rest, active_hours: hours }
@@ -145,13 +142,29 @@ export default function BotSettingsPage() {
                         </select>
                     </div>
                 </div>
-                <div className="text-sm text-slate-600">Aktif saatler (UTC)</div>
+                <div className="text-sm text-slate-600">Aktif saatler</div>
                 <input
                     value={settings.active_hours_raw || ''}
                     onChange={(e) => setSettings({ ...settings, active_hours_raw: e.target.value })}
-                    placeholder="Aktif saatler UTC (ör. 9,10,11,20)"
+                    placeholder="Örn: 02:00, 08:00 veya 10:00-23:00"
                     className="w-full px-3 py-2 rounded-lg bg-black/20 border border-slate-200"
                 />
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                    <input
+                        type="checkbox"
+                        checked={activeHoursUseTr}
+                        onChange={(e) => setActiveHoursUseTr(e.target.checked)}
+                    />
+                    TR saatine göre gir (UTC+3)
+                </label>
+                <div className="text-[10px] text-slate-500">
+                    Genişletilmiş: {formatHours(parseActiveHoursInput(settings.active_hours_raw || '')) || '-'}
+                </div>
+                {activeHoursUseTr && (
+                    <div className="text-[10px] text-slate-500">
+                        UTC karşılığı: {formatHours(toUtcHours(parseActiveHoursInput(settings.active_hours_raw || ''))) || '-'}
+                    </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                         <div className="text-sm text-slate-600">Oto-beğeni oranı (%)</div>

@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { formatHours, parseActiveHoursForSave, parseActiveHoursInput, toUtcHours } from '@/lib/activeHours'
 import Spinner from '@/components/ui/Spinner'
 type Group = {
     id: string
@@ -46,6 +47,7 @@ export default function BotGroupsPage() {
         profile_rotation_minutes: 0,
         active_hours_raw: '',
     })
+    const [activeHoursUseTr, setActiveHoursUseTr] = useState(true)
     const load = useCallback(async () => {
         setLoading(true)
         try {
@@ -64,12 +66,7 @@ export default function BotGroupsPage() {
         return () => clearTimeout(id)
     }, [load])
     const handleCreateGroup = async () => {
-        const hours = form.active_hours_raw
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean)
-            .map((v) => Number(v))
-            .filter((v) => !Number.isNaN(v) && v >= 0 && v <= 23)
+        const hours = parseActiveHoursForSave(form.active_hours_raw || '', activeHoursUseTr)
         const { active_hours_raw: _activeHoursRaw, ...rest } = form
         void _activeHoursRaw
         const payload: Record<string, unknown> = { ...rest, active_hours: hours }
@@ -168,13 +165,29 @@ export default function BotGroupsPage() {
                         </select>
                     </div>
                 </div>
-                <div className="text-sm text-slate-600">Aktif saatler (UTC)</div>
+                <div className="text-sm text-slate-600">Aktif saatler</div>
                 <input
                     value={form.active_hours_raw}
                     onChange={(e) => setForm({ ...form, active_hours_raw: e.target.value })}
-                    placeholder="Aktif saatler UTC (ör. 9,10,11,20)"
+                    placeholder="Örn: 02:00, 08:00 veya 10:00-23:00"
                     className="w-full px-3 py-2 rounded-lg bg-black/20 border border-slate-200"
                 />
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                    <input
+                        type="checkbox"
+                        checked={activeHoursUseTr}
+                        onChange={(e) => setActiveHoursUseTr(e.target.checked)}
+                    />
+                    TR saatine göre gir (UTC+3)
+                </label>
+                <div className="text-[10px] text-slate-500">
+                    Genişletilmiş: {formatHours(parseActiveHoursInput(form.active_hours_raw || '')) || '-'}
+                </div>
+                {activeHoursUseTr && (
+                    <div className="text-[10px] text-slate-500">
+                        UTC karşılığı: {formatHours(toUtcHours(parseActiveHoursInput(form.active_hours_raw || ''))) || '-'}
+                    </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                         <div className="text-sm text-slate-600">Cooldown (saat)</div>
@@ -241,6 +254,7 @@ export default function BotGroupsPage() {
 }
 function GroupRow({ group, onUpdated }: { group: Group; onUpdated: () => void }) {
     const [editing, setEditing] = useState(false)
+    const [activeHoursUseTr, setActiveHoursUseTr] = useState(false)
     const [state, setState] = useState({
         name: group.name || '',
         prompt: group.prompt || '',
@@ -256,12 +270,7 @@ function GroupRow({ group, onUpdated }: { group: Group; onUpdated: () => void })
         active_hours_raw: Array.isArray(group.active_hours) ? group.active_hours.join(',') : '',
     })
     const save = async () => {
-        const hours = state.active_hours_raw
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean)
-            .map((v) => Number(v))
-            .filter((v) => !Number.isNaN(v) && v >= 0 && v <= 23)
+        const hours = parseActiveHoursForSave(state.active_hours_raw || '', activeHoursUseTr)
         const { active_hours_raw: _activeHoursRaw, ...rest } = state
         void _activeHoursRaw
         const payload: Record<string, unknown> = { ...rest, active_hours: hours }
@@ -321,13 +330,29 @@ function GroupRow({ group, onUpdated }: { group: Group; onUpdated: () => void })
                         onChange={(e) => setState({ ...state, cooldown_hours: Number(e.target.value) })}
                         className="px-3 py-2 rounded-lg bg-black/20 border border-slate-200"
                     />
-                    <div className="text-sm text-slate-600">Aktif saatler (UTC)</div>
+                    <div className="text-sm text-slate-600">Aktif saatler</div>
                     <input
                         value={state.active_hours_raw}
                         onChange={(e) => setState({ ...state, active_hours_raw: e.target.value })}
                         className="px-3 py-2 rounded-lg bg-black/20 border border-slate-200"
-                        placeholder="Aktif saatler UTC"
+                        placeholder="Örn: 02:00, 08:00 veya 10:00-23:00"
                     />
+                    <label className="flex items-center gap-2 text-xs text-slate-600">
+                        <input
+                            type="checkbox"
+                            checked={activeHoursUseTr}
+                            onChange={(e) => setActiveHoursUseTr(e.target.checked)}
+                        />
+                        TR saatine göre gir (UTC+3)
+                    </label>
+                    <div className="text-[10px] text-slate-500">
+                        Genişletilmiş: {formatHours(parseActiveHoursInput(state.active_hours_raw || '')) || '-'}
+                    </div>
+                    {activeHoursUseTr && (
+                        <div className="text-[10px] text-slate-500">
+                            UTC karşılığı: {formatHours(toUtcHours(parseActiveHoursInput(state.active_hours_raw || ''))) || '-'}
+                        </div>
+                    )}
                     <div className="text-sm text-slate-600">Profil rotasyonu (dk)</div>
                     <input
                         type="number"

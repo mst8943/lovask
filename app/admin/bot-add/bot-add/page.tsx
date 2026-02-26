@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { formatHours, parseActiveHoursForSave, parseActiveHoursInput, toUtcHours } from '@/lib/activeHours'
 import Spinner from '@/components/ui/Spinner'
 
 type GroupRow = {
@@ -39,6 +40,7 @@ export default function AdminBotAddPage() {
         rotationMinutes: 0,
         useGlobal: true,
     })
+    const [activeHoursUseTr, setActiveHoursUseTr] = useState(true)
 
     useEffect(() => {
         const load = async () => {
@@ -74,13 +76,7 @@ export default function AdminBotAddPage() {
                     auto_like_rate: form.autoLikeRate,
                     engagement_intensity: form.engagement,
                     cooldown_hours: form.cooldownHours,
-                    active_hours: (form.activeHoursRaw || '')
-                        .split(',')
-                        .map((v) => v.trim())
-                        .filter(Boolean)
-                        .map((v) => v.replace(':00', ''))
-                        .map((v) => Number(v))
-                        .filter((v) => !Number.isNaN(v) && v >= 0 && v <= 23),
+                    active_hours: parseActiveHoursForSave(form.activeHoursRaw || '', activeHoursUseTr),
                     response_delay_min_s: form.delayMin,
                     response_delay_max_s: form.delayMax,
                     allow_initiate: form.allowInitiate,
@@ -256,14 +252,29 @@ export default function AdminBotAddPage() {
                         />
                     </div>
                     <div className="space-y-1">
-                        <div className="text-sm text-slate-600">Aktif saatler (UTC)</div>
+                        <div className="text-sm text-slate-600">Aktif saatler</div>
                         <input
                             value={form.activeHoursRaw}
                             onChange={(e) => setForm({ ...form, activeHoursRaw: e.target.value })}
-                            placeholder="Örn: 02:00, 08:00"
+                            placeholder="Örn: 02:00, 08:00 veya 10:00-23:00"
                             className="w-full px-3 py-2 bg-black/20 border border-slate-200 rounded-lg"
                         />
-                        <div className="text-[10px] text-slate-500">Saatleri UTC gir: 02:00, 08:00, 14:00</div>
+                        <label className="flex items-center gap-2 text-xs text-slate-600">
+                            <input
+                                type="checkbox"
+                                checked={activeHoursUseTr}
+                                onChange={(e) => setActiveHoursUseTr(e.target.checked)}
+                            />
+                            TR saatine göre gir (UTC+3)
+                        </label>
+                        <div className="text-[10px] text-slate-500">
+                            Genişletilmiş: {formatHours(parseActiveHoursInput(form.activeHoursRaw || '')) || '-'}
+                        </div>
+                        {activeHoursUseTr && (
+                            <div className="text-[10px] text-slate-500">
+                                UTC karşılığı: {formatHours(toUtcHours(parseActiveHoursInput(form.activeHoursRaw || ''))) || '-'}
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-1">
                         <div className="text-sm text-slate-600">Cevap gecikmesi min (sn)</div>

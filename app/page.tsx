@@ -1,11 +1,11 @@
 ﻿'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Smartphone } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import LoadingSplash from '@/components/ui/LoadingSplash'
@@ -15,6 +15,30 @@ export default function ZenithLanding() {
   const { user, isLoading } = useAuthStore()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handlePwaInstall = async () => {
+    if (!deferredPrompt) {
+      alert('Yükleme şu an başlatılamıyor. Tarayıcınız desteklemiyor olabilir veya zaten yüklü olabilir.')
+      return
+    }
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null)
+    }
+  }
 
   // Auto-redirect if logged in
   useEffect(() => {
@@ -659,8 +683,16 @@ export default function ZenithLanding() {
             Android uygulamamızı indir, seçkin bağlantılara her an eriş.
           </p>
         </div>
-        <div className="zenithV4_mobile_cta" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', maxWidth: '900px', margin: '0 auto' }}>
+        <div className="zenithV4_mobile_cta" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', maxWidth: '900px', margin: '0 auto', flexWrap: 'wrap' }}>
           <Link href="#" className="zenithV4_btn primary">Google Play’den İndir</Link>
+          <button
+            onClick={handlePwaInstall}
+            className="zenithV4_btn"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Smartphone size={18} />
+            Hızlı Kurulum (PWA)
+          </button>
           <span style={{ color: 'var(--zenithV4_text_dim)', fontSize: '0.9rem' }}>iOS yakında</span>
         </div>
       </section>
