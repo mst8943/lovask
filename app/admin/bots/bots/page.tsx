@@ -2351,9 +2351,7 @@ function BotRowItem({ bot, selected, onSelect }: { bot: BotRow; selected: boolea
         const payload: Record<string, unknown> = { ...rest }
 
         if (active_hours_raw !== undefined) {
-
-            payload.active_hours = normalizeActiveHours(active_hours_raw)
-
+            payload.active_hours = normalizeActiveHours(active_hours_raw, editActiveHoursUseTr)
         }
 
         await postJson('/api/admin/bots/update', {
