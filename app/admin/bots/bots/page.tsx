@@ -472,57 +472,57 @@ export default function AdminBotsPage() {
 
                     ...bot,
 
-                    coin_balance: bot.coin_balance ? null,
+                    coin_balance: bot.coin_balance ?? null,
 
-                    is_premium: bot.is_premium ? null,
+                    is_premium: bot.is_premium ?? null,
 
-                    premium_expires_at: bot.premium_expires_at ? null,
+                    premium_expires_at: bot.premium_expires_at ?? null,
 
-                    last_active_at: bot.last_active_at ? null,
+                    last_active_at: bot.last_active_at ?? null,
 
                     profiles: profile || null,
 
                     bot_configs: config || null,
 
-                    display_name: profile?.display_name ? null,
+                    display_name: profile?.display_name ?? null,
 
-                    age: profile?.age ? null,
+                    age: profile?.age ?? null,
 
-                    gender: profile?.gender ? null,
+                    gender: profile?.gender ?? null,
 
-                    city: profile?.city ? null,
+                    city: profile?.city ?? null,
 
-                    bio: profile?.bio ? null,
+                    bio: profile?.bio ?? null,
 
-                    photos: profile?.photos ? null,
+                    photos: profile?.photos ?? null,
 
-                    personality_prompt: config?.personality_prompt ? null,
+                    personality_prompt: config?.personality_prompt ?? null,
 
-                    tone: config?.tone ? null,
+                    tone: config?.tone ?? null,
 
-                    language_mode: config?.language_mode ? null,
+                    language_mode: config?.language_mode ?? null,
 
-                    auto_like_rate: config?.auto_like_rate ? null,
+                    auto_like_rate: config?.auto_like_rate ?? null,
 
-                    engagement_intensity: config?.engagement_intensity ? null,
+                    engagement_intensity: config?.engagement_intensity ?? null,
 
-                    cooldown_hours: config?.cooldown_hours ? null,
+                    cooldown_hours: config?.cooldown_hours ?? null,
 
-                    response_delay_min_s: config?.response_delay_min_s ? null,
+                    response_delay_min_s: config?.response_delay_min_s ?? null,
 
-                    response_delay_max_s: config?.response_delay_max_s ? null,
+                    response_delay_max_s: config?.response_delay_max_s ?? null,
 
-                    profile_rotation_minutes: config?.profile_rotation_minutes ? null,
+                    profile_rotation_minutes: config?.profile_rotation_minutes ?? null,
 
-                    allow_initiate: config?.allow_initiate ? null,
+                    allow_initiate: config?.allow_initiate ?? null,
 
-                    auto_story: config?.auto_story ? null,
+                    auto_story: config?.auto_story ?? null,
 
-                    use_global: config?.use_global ? null,
+                    use_global: config?.use_global ?? null,
 
-                    active: config?.behavior_settings?.active ? null,
+                    active: config?.behavior_settings?.active ?? null,
 
-                    group_id: config?.behavior_settings?.group_id ? null,
+                    group_id: config?.behavior_settings?.group_id ?? null,
 
                 }
 
